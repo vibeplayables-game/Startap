@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>STAR TAP - Arcade</title>
 
-  <!-- YOUTUBE PLAYABLES SDK (OBRIGATÓRIO LOCAL NO PACOTE .ZIP) -->
+  <!-- YOUTUBE PLAYABLES SDK (Obrigatório ser a primeira tag de script antes do jogo) -->
   <script src="https://www.youtube.com/game_api/v1"></script>
 
   <style>
@@ -148,9 +148,6 @@
       pointer-events: none !important;
     }
 
-    /* ==========================================================================
-       LAYOUT RETRATO (PORTRAIT PADRÃO)
-       ========================================================================== */
     #start-screen {
       padding: calc(60px + env(safe-area-inset-top, 0px)) 20px calc(24px + env(safe-area-inset-bottom, 0px)) 20px;
       background: radial-gradient(circle at 50% 40%, rgba(0, 229, 255, 0.12) 0%, rgba(4, 7, 20, 0.96) 70%, #040714 100%);
@@ -381,10 +378,7 @@
       50% { transform: translate(-50%, -50%) translateY(-6px); }
     }
 
-    /* ==========================================================================
-       MODO PAISAGEM (LANDSCAPE) & TELAS CURTAS (< 520px)
-       Resolve o corte dos botões no YouTube Playables Test Suite
-       ========================================================================== */
+    /* ADAPTAÇÃO PARA MODO PAISAGEM (LANDSCAPE) */
     @media (orientation: landscape), (max-height: 520px) {
       #start-screen {
         flex-direction: row !important;
@@ -438,10 +432,9 @@
       }
 
       .hints-card span:last-child {
-        display: none; /* Oculta texto secundário em telas de baixa altura */
+        display: none;
       }
 
-      /* Compactação de Pause e Game Over no modo paisagem */
       .gameover-card {
         padding: 14px 18px !important;
         max-width: 360px !important;
@@ -552,11 +545,14 @@
 
   <script>
     /* ==========================================================================
-       ESTADOS DO JOGO E FLAGS DE PAUSA RIGOROSAS
+       ESTADOS DO JOGO E CONTROLE DE AMBIENTE PLAYABLES
        ========================================================================== */
+    const isPlayablesEnv = Boolean(window.ytgame && window.ytgame.IN_PLAYABLES_ENV);
+
     let platformPaused = false;
     let userPaused = false;
     let isDataLoaded = false;
+    let userInteracted = false;
     let gameOverTimestamp = 0;
     let state = 'START';
     let previousStateBeforePause = 'READY';
@@ -568,7 +564,7 @@
     let physicsAccumulator = 0;
 
     /* ==========================================================================
-       SISTEMA DE ÁUDIO WEB AUDIO API (ISOLADO E CONTROLADO)
+       ÁUDIO EM CONFORMIDADE COM A API DE ÁUDIO DO YOUTUBE PLAYABLES
        ========================================================================== */
     class PlayablesAudioEngine {
       constructor() {
@@ -599,7 +595,9 @@
           this.masterGain.gain.setValueAtTime(this.audioEnabled ? 0.35 : 0, this.ctx.currentTime);
         }
         if (this.audioEnabled) {
-          this.resume();
+          if (userInteracted && !platformPaused && !userPaused) {
+            this.resume();
+          }
         } else {
           this.suspend();
         }
@@ -618,7 +616,7 @@
       }
 
       playTone(freq, startOffset, duration, type = 'sine', gainVal = 0.2) {
-        if (!this.audioEnabled || platformPaused || userPaused) return;
+        if (!this.audioEnabled || platformPaused || userPaused || !userInteracted) return;
         this.init();
         if (!this.ctx || !this.masterGain) return;
 
@@ -637,7 +635,7 @@
       }
 
       playJump() {
-        if (!this.audioEnabled || platformPaused || userPaused) return;
+        if (!this.audioEnabled || platformPaused || userPaused || !userInteracted) return;
         this.init();
         if (!this.ctx || !this.masterGain) return;
         const now = this.ctx.currentTime;
@@ -655,25 +653,25 @@
       }
 
       playBounce(currentScore) {
-        if (!this.audioEnabled || platformPaused || userPaused) return;
+        if (!this.audioEnabled || platformPaused || userPaused || !userInteracted) return;
         const note = this.scale[currentScore % this.scale.length];
         this.playTone(note, 0, 0.22, 'sine', 0.26);
       }
 
       playGem() {
-        if (!this.audioEnabled || platformPaused || userPaused) return;
+        if (!this.audioEnabled || platformPaused || userPaused || !userInteracted) return;
         this.playTone(987.77, 0, 0.12, 'sine', 0.18);
         this.playTone(1318.51, 0.07, 0.14, 'sine', 0.2);
       }
 
       playDie() {
-        if (!this.audioEnabled || platformPaused || userPaused) return;
+        if (!this.audioEnabled || platformPaused || userPaused || !userInteracted) return;
         this.playTone(320.00, 0, 0.24, 'sawtooth', 0.2);
         this.playTone(180.00, 0.1, 0.35, 'sawtooth', 0.2);
       }
 
       playRecord() {
-        if (!this.audioEnabled || platformPaused || userPaused) return;
+        if (!this.audioEnabled || platformPaused || userPaused || !userInteracted) return;
         [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
           this.playTone(freq, idx * 0.08, 0.24, 'sine', 0.22);
         });
@@ -683,6 +681,7 @@
     const audio = new PlayablesAudioEngine();
 
     function wakeAudio() {
+      userInteracted = true;
       audio.init();
     }
     window.addEventListener('pointerdown', wakeAudio, { once: true });
@@ -711,7 +710,6 @@
     const pauseRestartBtn = document.getElementById('pause-restart-btn');
 
     let renderScale = 1;
-
     let V_WIDTH = 400;
     const V_HEIGHT = 800;
     let arenaWidth = 400;
@@ -760,7 +758,7 @@
     }
     window.addEventListener('resize', resizeCanvas);
 
-    /* ELEMENTOS VISUAIS E PARTICULAS */
+    /* ELEMENTOS VISUAIS */
     const bgStars = [];
     for (let i = 0; i < 75; i++) {
       bgStars.push({
@@ -831,7 +829,7 @@
     }
 
     /* ==========================================================================
-       CONGELAMENTO E RETOMADA RIGOROSOS DO MOTOR
+       CONGELAMENTO E RETOMADA
        ========================================================================== */
     function pausarLogicaJogo(origem = 'user') {
       if (origem === 'system') {
@@ -895,7 +893,6 @@
       }
     }
 
-    /* GERAÇÃO DINÂMICA DE ESPINHOS */
     function generateSpikeSlots() {
       const slots = [];
       let count = 2;
@@ -977,19 +974,37 @@
       return d1 < colRadiusSq || d2 < colRadiusSq;
     }
 
-    /* PERSISTÊNCIA NA NUVEM VIA SDK DO YOUTUBE */
+    /* ==========================================================================
+       INTEGRAÇÃO PLAYABLES: SALVAR DADOS E ENVIAR PLACAR (SENDSCORE)
+       ========================================================================== */
+    async function submitScoreToYouTube(val) {
+      if (typeof ytgame !== 'undefined' && ytgame.engagement?.sendScore) {
+        try {
+          await ytgame.engagement.sendScore({ value: Math.floor(val) });
+        } catch (err) {
+          console.warn('Falha ao enviar score para o YouTube Playables:', err);
+        }
+      }
+    }
+
     async function saveHighScore(newRecord) {
       if (!isDataLoaded) return;
       bestScore = Math.max(bestScore, newRecord);
       menuBestVal.textContent = bestScore;
 
+      // 1. Salva na nuvem do YouTube (Passo 8 do Guia)
       if (typeof ytgame !== 'undefined' && ytgame.game?.saveData) {
         try {
           await ytgame.game.saveData(JSON.stringify({ bestScore }));
         } catch (err) {
           console.warn('Erro ao salvar dados no YouTube Playables:', err);
         }
+      } else {
+        try { localStorage.setItem('startap_best', String(bestScore)); } catch (_) {}
       }
+
+      // 2. Envia pontuação para o placar nativo do YouTube (Passo 9 do Guia)
+      await submitScoreToYouTube(bestScore);
     }
 
     async function loadSavedData() {
@@ -1005,7 +1020,13 @@
         } catch (err) {
           console.warn('Erro ao carregar dados do YouTube Playables:', err);
         }
+      } else {
+        try {
+          const local = localStorage.getItem('startap_best');
+          if (local) bestScore = parseInt(local, 10) || 0;
+        } catch (_) {}
       }
+
       isDataLoaded = true;
       menuBestVal.textContent = bestScore;
       gameoverRecordMsg.textContent = `BEST SCORE: ${bestScore}`;
@@ -1092,7 +1113,6 @@
       }
     }
 
-    /* CONTROLE DE EVENTOS */
     pauseBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       togglePause();
@@ -1156,7 +1176,7 @@
       if (document.hidden) {
         pausarLogicaJogo('system');
       } else {
-        if (typeof ytgame === 'undefined') {
+        if (!isPlayablesEnv) {
           retomarLogicaJogo('system');
         }
       }
@@ -1245,7 +1265,6 @@
       ctx.restore();
     }
 
-    /* LOOP FÍSICO COM PARADA ABSOLUTA */
     function tickFixedPhysics() {
       if (platformPaused || userPaused || state === 'PAUSED') return;
 
@@ -1308,7 +1327,6 @@
         });
       }
 
-      // Teto e Chão
       if (player.y - player.radius <= TOP_SPIKE_Y || player.y + player.radius >= BOT_SPIKE_Y) {
         triggerGameOver();
         return;
@@ -1317,7 +1335,6 @@
       const leftWallX = arenaLeft + WALL_THICK;
       const rightWallX = arenaRight - WALL_THICK;
 
-      // Parede direita
       if (player.x + player.radius >= rightWallX) {
         player.x = rightWallX - player.radius;
         player.vx = -Math.abs(player.vx);
@@ -1331,7 +1348,6 @@
         spawnGem();
       }
 
-      // Parede esquerda
       if (player.x - player.radius <= leftWallX) {
         player.x = leftWallX + player.radius;
         player.vx = Math.abs(player.vx);
@@ -1345,7 +1361,6 @@
         spawnGem();
       }
 
-      // Espinhos
       if (player.vx > 0) {
         for (let i = 0; i < rightSpikeSlots.length; i++) {
           if (checkSpikeSlotCollision('right', rightSpikeSlots[i])) {
@@ -1362,7 +1377,6 @@
         }
       }
 
-      // Joia
       if (gem) {
         gem.floatTime += 0.05;
         const gemRealX = leftWallX + gem.relX * (rightWallX - leftWallX);
@@ -1381,7 +1395,6 @@
       }
     }
 
-    /* RENDERIZAÇÃO */
     function render() {
       if (canvas.width === 0 || canvas.height === 0) return;
 
@@ -1398,11 +1411,9 @@
         ctx.translate(ox, oy);
       }
 
-      // Fundo
       ctx.fillStyle = '#040714';
       ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
 
-      // Estrelas
       const now = performance.now() * 0.003;
       for (let i = 0; i < bgStars.length; i++) {
         const s = bgStars[i];
@@ -1414,7 +1425,6 @@
       }
       ctx.globalAlpha = 1.0;
 
-      // Confetes
       for (let i = 0; i < bgConfetti.length; i++) {
         const c = bgConfetti[i];
         const cX = c.x % V_WIDTH;
@@ -1428,7 +1438,6 @@
       }
       ctx.globalAlpha = 1.0;
 
-      // Placar
       if (state === 'PLAY' || state === 'PAUSED') {
         ctx.fillStyle = 'rgba(0, 229, 255, 0.06)';
         ctx.font = '900 150px system-ui, -apple-system, sans-serif';
@@ -1437,7 +1446,6 @@
         ctx.fillText(score, (arenaLeft + arenaRight) / 2, (TOP_SPIKE_Y + BOT_SPIKE_Y) / 2);
       }
 
-      // Efeitos de toque
       for (let i = 0; i < tapRipples.length; i++) {
         const r = tapRipples[i];
         ctx.strokeStyle = '#00e5ff';
@@ -1488,7 +1496,6 @@
       drawNeonRail(leftWallX, wallFlashLeft);
       drawNeonRail(rightWallX, wallFlashRight);
 
-      // Teto e Chão dinâmicos
       const spikeW = 20;
       const arenaSpikeCount = Math.ceil((arenaRight - arenaLeft) / spikeW);
 
@@ -1601,7 +1608,6 @@
       ctx.restore();
     }
 
-    /* LOOP PRINCIPAL */
     function mainLoop(currentFrameTime) {
       if (platformPaused || userPaused || state === 'PAUSED') {
         animFrameId = null;
@@ -1623,13 +1629,16 @@
       animFrameId = requestAnimationFrame(mainLoop);
     }
 
-    /* CICLO DE VIDA DO YOUTUBE PLAYABLES SDK */
+    /* ==========================================================================
+       CICLO DE VIDA CONFORME AS DIRETRIZES DO YOUTUBE PLAYABLES
+       ========================================================================== */
     async function initPlayable() {
+      // 1. Configura a tela e desenha o primeiro frame
       resizeCanvas();
       updateScreensUI();
-
       render();
 
+      // 2. Notifica o YouTube que o primeiro frame foi renderizado (Passo 4)
       if (typeof ytgame !== 'undefined' && ytgame.game?.firstFrameReady) {
         try {
           ytgame.game.firstFrameReady();
@@ -1638,6 +1647,7 @@
         }
       }
 
+      // 3. Registra os ouvintes do sistema da plataforma (Passos 6 e 7)
       if (typeof ytgame !== 'undefined' && ytgame.system) {
         if (typeof ytgame.system.isAudioEnabled === 'function') {
           try {
@@ -1660,6 +1670,10 @@
         if (typeof ytgame.system.onPause === 'function') {
           ytgame.system.onPause(() => {
             pausarLogicaJogo('system');
+            // Salva progresso ao pausar para não perder recordes caso o app seja fechado
+            if (score > bestScore) {
+              saveHighScore(score);
+            }
           });
         }
 
@@ -1675,13 +1689,14 @@
         animFrameId = requestAnimationFrame(mainLoop);
       }
 
+      // 4. Carrega os dados salvos antes de habilitar as ações (Passo 8)
       await loadSavedData();
 
+      // 5. Notifica que o jogo e o menu estão 100% interativos para o usuário
       if (typeof ytgame !== 'undefined' && ytgame.game?.gameReady) {
         try {
           ytgame.game.gameReady();
-        } catch (e)
-          {
+        } catch (e) {
           console.warn('gameReady:', e);
         }
       }
