@@ -1,13 +1,12 @@
-
-<!DOCTYPE HTML>
-<html lang="en" translate="no">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>STAR TAP - Arcade</title>
 
-  <!-- YOUTUBE PLAYABLES SDK (FIRST MANDATORY SCRIPT) -->
-  <script src="https://www.youtube.com/game_api/v1"></script>
+  <!-- YOUTUBE PLAYABLES SDK (OBRIGATÓRIO LOCAL NO PACOTE .ZIP) -->
+  <script src="youtube_playable_sdk.js"></script>
 
   <style>
     * {
@@ -24,7 +23,7 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      background-color: #020307;
+      background-color: #040714;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -34,28 +33,13 @@
       color: #fff;
     }
 
-    /* MAIN GAME CONTAINER */
     #game-wrapper {
-      position: relative;
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       overflow: hidden;
       background: #040714;
-    }
-
-    /* UNIVERSAL FRAME FOR ANY SCREEN IN LANDSCAPE (DESKTOP OR MOBILE) */
-    @media (orientation: landscape) {
-      #game-wrapper {
-        width: min(100vw, calc(100vh * (420 / 720)));
-        height: min(100vh, 880px);
-        max-width: 480px;
-        border: 2px solid #00e5ff;
-        border-radius: 18px;
-        box-shadow: 0 0 35px rgba(0, 229, 255, 0.25), 0 16px 45px rgba(0, 0, 0, 0.9);
-      }
     }
 
     canvas {
@@ -64,24 +48,25 @@
       height: 100%;
     }
 
-    /* --- TOP HUD BAR --- */
+    /* TOP HUD BAR */
     #top-hud {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
-      height: calc(58px + env(safe-area-inset-top, 0px));
-      padding: max(8px, env(safe-area-inset-top, 8px)) 16px 6px 16px;
+      height: calc(64px + env(safe-area-inset-top, 0px));
+      padding: max(10px, env(safe-area-inset-top, 10px)) 20px 8px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       z-index: 40;
-      background: linear-gradient(180deg, rgba(3, 5, 15, 0.96) 0%, rgba(3, 5, 15, 0.85) 75%, rgba(3, 5, 15, 0) 100%);
+      background: linear-gradient(180deg, rgba(4, 7, 20, 0.95) 0%, rgba(4, 7, 20, 0.6) 75%, transparent 100%);
       pointer-events: none;
     }
 
     .hud-controls {
       display: flex;
+      align-items: center;
       gap: 12px;
       pointer-events: auto;
     }
@@ -120,14 +105,13 @@
     }
 
     #live-score {
-      font-size: 24px;
+      font-size: 26px;
       font-weight: 900;
       letter-spacing: 1px;
       color: #00e5ff;
-      text-shadow: 0 0 12px rgba(0, 229, 255, 0.7), 0 2px 4px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 0 14px rgba(0, 229, 255, 0.8), 0 2px 4px rgba(0, 0, 0, 0.9);
       opacity: 0;
       transition: opacity 0.2s ease;
-      display: inline-block;
       pointer-events: none;
     }
 
@@ -135,7 +119,7 @@
       opacity: 1;
     }
 
-    /* --- SCREENS AND OVERLAYS --- */
+    /* SCREENS E OVERLAYS */
     .ui-overlay {
       position: absolute;
       inset: 0;
@@ -143,12 +127,14 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: rgba(3, 5, 14, 0.92);
+      background: rgba(4, 7, 20, 0.9);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       z-index: 30;
       padding: 24px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.25s ease;
+      transition: opacity 0.22s ease;
     }
 
     .ui-overlay.active {
@@ -162,13 +148,9 @@
     }
 
     #start-screen {
-      padding: calc(64px + env(safe-area-inset-top, 0px)) 20px calc(24px + env(safe-area-inset-bottom, 0px)) 20px;
-      background: radial-gradient(circle at 50% 35%, rgba(0, 229, 255, 0.08) 0%, rgba(4, 7, 20, 0.96) 70%, #040714 100%);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
+      padding: calc(64px + env(safe-area-inset-top, 0px)) 20px calc(32px + env(safe-area-inset-bottom, 0px)) 20px;
+      background: radial-gradient(circle at 50% 40%, rgba(0, 229, 255, 0.12) 0%, rgba(4, 7, 20, 0.96) 70%, #040714 100%);
       justify-content: space-between;
-      align-items: center;
     }
 
     .logo-container {
@@ -184,49 +166,40 @@
 
     @keyframes logoFloat {
       0% { transform: translateY(0); }
-      100% { transform: translateY(-8px); }
+      100% { transform: translateY(-10px); }
     }
 
     .logo-star-top {
-      font-size: 48px;
+      font-size: 52px;
       color: #ffd700;
       filter: drop-shadow(0 0 16px rgba(255, 215, 0, 0.8));
       margin-bottom: -6px;
-      animation: starTwinkle 1.8s infinite ease-in-out;
-    }
-
-    @keyframes starTwinkle {
-      0%, 100% { transform: scale(1) rotate(0deg); }
-      50% { transform: scale(1.1) rotate(12deg); filter: drop-shadow(0 0 24px #ffd700); }
     }
 
     .logo-main {
-      font-size: 56px;
+      font-size: 58px;
       font-weight: 900;
       letter-spacing: 3px;
       line-height: 1;
-      display: block;
       color: #ffcc00;
-      text-shadow: 3px 3px 0 #b35900, 0 0 20px rgba(255, 204, 0, 0.4);
+      text-shadow: 3px 3px 0 #b35900, 0 0 24px rgba(255, 204, 0, 0.4);
     }
 
     .logo-sub {
-      font-size: 46px;
+      font-size: 48px;
       font-weight: 900;
-      letter-spacing: 7px;
-      display: block;
+      letter-spacing: 8px;
       color: #00e5ff;
-      text-shadow: 3px 3px 0 #006699, 0 0 20px rgba(0, 229, 255, 0.5);
+      text-shadow: 3px 3px 0 #006699, 0 0 24px rgba(0, 229, 255, 0.5);
       margin-top: -6px;
     }
 
     .menu-bottom-content {
-      position: relative;
-      z-index: 10;
       display: flex;
       flex-direction: column;
       align-items: center;
       width: 100%;
+      max-width: 320px;
     }
 
     .best-badge {
@@ -235,14 +208,14 @@
       gap: 8px;
       background: #090e20;
       border: 2px solid #ffd700;
-      padding: 7px 18px;
+      padding: 8px 20px;
       border-radius: 999px;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 900;
       letter-spacing: 1px;
       color: #ffd700;
-      margin-bottom: 16px;
-      box-shadow: 0 0 14px rgba(255, 215, 0, 0.2);
+      margin-bottom: 20px;
+      box-shadow: 0 0 16px rgba(255, 215, 0, 0.25);
     }
 
     .action-btn {
@@ -250,15 +223,15 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      width: 240px;
+      width: 100%;
       height: 54px;
       min-height: 48px;
       background: #00e5ff;
       color: #040714;
       border: 2px solid #00e5ff;
-      border-radius: 12px;
+      border-radius: 14px;
       font-family: inherit;
-      font-size: 17px;
+      font-size: 18px;
       font-weight: 900;
       letter-spacing: 1px;
       cursor: pointer;
@@ -276,12 +249,12 @@
     }
 
     .hints-card {
-      margin-top: 14px;
+      margin-top: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
-      font-size: 12px;
+      gap: 8px;
+      font-size: 13px;
       color: #7b8ea8;
       font-weight: 700;
     }
@@ -294,7 +267,7 @@
     .tag {
       background: #0c1226;
       border: 1px solid #00e5ff;
-      padding: 3px 9px;
+      padding: 4px 10px;
       border-radius: 6px;
       font-size: 11px;
       font-weight: 800;
@@ -304,11 +277,12 @@
     .gameover-card {
       background: #080d20;
       border: 2px solid #00e5ff;
-      border-radius: 18px;
+      border-radius: 20px;
       padding: 28px 24px;
       width: 100%;
       max-width: 320px;
       text-align: center;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 229, 255, 0.2);
     }
 
     .gameover-title {
@@ -324,7 +298,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
 
     .score-num {
@@ -345,12 +319,13 @@
     .record-status {
       font-size: 14px;
       font-weight: 800;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
       color: #abbbcf;
     }
 
     .record-status.new-record {
       color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
     }
 
     .btn-secondary {
@@ -377,7 +352,7 @@
       z-index: 26;
       pointer-events: none;
       opacity: 0;
-      transition: opacity 0.25s ease;
+      transition: opacity 0.22s ease;
       font-size: 16px;
       font-weight: 900;
       letter-spacing: 1.5px;
@@ -391,13 +366,13 @@
     }
 
     .ready-tap-icon {
-      font-size: 30px;
+      font-size: 32px;
       filter: drop-shadow(0 0 10px #00e5ff);
     }
 
     @keyframes pulseFloat {
       0%, 100% { transform: translate(-50%, -50%) translateY(0); }
-      50% { transform: translate(-50%, -50%) translateY(-7px); }
+      50% { transform: translate(-50%, -50%) translateY(-8px); }
     }
   </style>
 </head>
@@ -407,8 +382,7 @@
     <div id="top-hud">
       <div id="live-score">Score: 0</div>
       <div class="hud-controls">
-        <button id="pause-toggle" class="hud-btn" title="Pause / Resume (P)" aria-label="Pause">⏸</button>
-        <button id="sound-toggle" class="hud-btn" title="Toggle Sound" aria-label="Sound Toggle">🔊</button>
+        <button id="pause-toggle" class="hud-btn" title="Pause / Resume" aria-label="Pause">⏸</button>
       </div>
     </div>
 
@@ -454,8 +428,8 @@
           <span class="score-num" id="pause-score-val" style="color: #00e5ff;">0</span>
           <span class="score-lbl">CURRENT SCORE</span>
         </div>
-        <button id="resume-btn" class="action-btn" style="width: 100%;">RESUME</button>
-        <button id="pause-restart-btn" class="action-btn btn-secondary" style="width: 100%;">RESTART</button>
+        <button id="resume-btn" class="action-btn">RESUME</button>
+        <button id="pause-restart-btn" class="action-btn btn-secondary">RESTART</button>
       </div>
     </div>
 
@@ -467,7 +441,7 @@
           <span class="score-lbl">FINAL SCORE</span>
         </div>
         <div id="gameover-record-msg" class="record-status">BEST SCORE: 0</div>
-        <button id="restart-btn" class="action-btn" style="width: 100%; background: #ff2a78; border-color: #ff2a78; color: #fff;">
+        <button id="restart-btn" class="action-btn" style="background: #ff2a78; border-color: #ff2a78; color: #fff;">
           <span>TRY AGAIN</span>
           <span style="font-size: 18px; line-height: 1;">↻</span>
         </button>
@@ -476,40 +450,57 @@
   </div>
 
   <script>
-    let platformPaused = false;
-    let userPaused = false;
-    let savedStateBeforePlatformPause = null;
+    /* ==========================================================================
+       ESTADOS DO JOGO E FLAGS DE PAUSA RIGOROSAS
+       ========================================================================== */
+    let platformPaused = false; // YouTube SDK ou Mudança de Visibilidade da Aba
+    let userPaused = false;     // Botão manual de pausa ou tecla de pausa
     let isDataLoaded = false;
-    let gameOverTimestamp = 0; // Prevents accidental clicks on Game Over
+    let gameOverTimestamp = 0;
+    let state = 'START';        // 'START' | 'READY' | 'PLAY' | 'PAUSED' | 'GAMEOVER'
+    let previousStateBeforePause = 'READY';
+    let score = 0;
+    let bestScore = 0;
 
-    /* --- CERTIFIED AUDIO SYSTEM --- */
-    class SoundFX {
+    let animFrameId = null;
+    let lastFrameTime = performance.now();
+    let physicsAccumulator = 0;
+
+    /* ==========================================================================
+       SISTEMA DE ÁUDIO RESTRITO AO YOUTUBE PLAYABLES (Web Audio API)
+       ========================================================================== */
+    class PlayablesAudioEngine {
       constructor() {
         this.ctx = null;
         this.masterGain = null;
-        this.userMuted = false;
-        this.platformMuted = false;
+        this.audioEnabled = true;
         this.scale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
       }
 
-      get isMuted() {
-        const isInsidePlayables = typeof ytgame !== 'undefined' && Boolean(ytgame.IN_PLAYABLES_ENV);
-        return isInsidePlayables ? this.platformMuted : this.userMuted;
-      }
-
-      // ALWAYS initialize on the first human gesture to unlock mobile AudioContext
       init() {
         if (!this.ctx) {
           const AudioContextClass = window.AudioContext || window.webkitAudioContext;
           if (AudioContextClass) {
             this.ctx = new AudioContextClass();
             this.masterGain = this.ctx.createGain();
-            this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : 0.35, this.ctx.currentTime);
+            this.masterGain.gain.setValueAtTime(this.audioEnabled ? 0.35 : 0, this.ctx.currentTime);
             this.masterGain.connect(this.ctx.destination);
           }
         }
-        if (this.ctx && this.ctx.state === 'suspended' && !this.isMuted && !platformPaused) {
+        if (this.ctx && this.ctx.state === 'suspended' && this.audioEnabled && !platformPaused && !userPaused) {
           this.ctx.resume().catch(() => {});
+        }
+      }
+
+      setAudioEnabled(enabled) {
+        this.audioEnabled = Boolean(enabled);
+        if (this.masterGain && this.ctx) {
+          this.masterGain.gain.setValueAtTime(this.audioEnabled ? 0.35 : 0, this.ctx.currentTime);
+        }
+        if (this.audioEnabled) {
+          this.resume();
+        } else {
+          this.suspend();
         }
       }
 
@@ -520,48 +511,13 @@
       }
 
       resume() {
-        if (this.ctx && this.ctx.state === 'suspended' && !this.isMuted && !platformPaused) {
+        if (this.ctx && this.ctx.state === 'suspended' && this.audioEnabled && !platformPaused && !userPaused) {
           this.ctx.resume().catch(() => {});
         }
       }
 
-      setPlatformMute(isMuted) {
-        this.platformMuted = Boolean(isMuted);
-        if (this.masterGain && this.ctx) {
-          this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : 0.35, this.ctx.currentTime);
-        }
-        if (this.isMuted) {
-          this.suspend();
-        } else {
-          this.resume();
-        }
-        this.updateUI();
-      }
-
-      toggleUserMute() {
-        const isInsidePlayables = typeof ytgame !== 'undefined' && Boolean(ytgame.IN_PLAYABLES_ENV);
-        if (isInsidePlayables) return;
-
-        this.userMuted = !this.userMuted;
-        this.init();
-
-        if (this.masterGain && this.ctx) {
-          this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : 0.35, this.ctx.currentTime);
-        }
-        if (!this.isMuted) this.resume();
-        this.updateUI();
-      }
-
-      updateUI() {
-        const btn = document.getElementById('sound-toggle');
-        if (btn) {
-          btn.textContent = this.isMuted ? '🔇' : '🔊';
-          btn.title = this.isMuted ? 'Unmute Sound' : 'Mute Sound';
-        }
-      }
-
       playTone(freq, startOffset, duration, type = 'sine', gainVal = 0.2) {
-        if (this.isMuted || platformPaused) return;
+        if (!this.audioEnabled || platformPaused || userPaused) return;
         this.init();
         if (!this.ctx || !this.masterGain) return;
 
@@ -580,7 +536,7 @@
       }
 
       playJump() {
-        if (this.isMuted || platformPaused) return;
+        if (!this.audioEnabled || platformPaused || userPaused) return;
         this.init();
         if (!this.ctx || !this.masterGain) return;
         const now = this.ctx.currentTime;
@@ -598,53 +554,46 @@
       }
 
       playBounce(currentScore) {
-        if (this.isMuted || platformPaused) return;
+        if (!this.audioEnabled || platformPaused || userPaused) return;
         const note = this.scale[currentScore % this.scale.length];
-        this.playTone(note, 0, 0.22, 'sine', 0.28);
+        this.playTone(note, 0, 0.22, 'sine', 0.26);
       }
 
       playGem() {
-        if (this.isMuted || platformPaused) return;
-        this.playTone(987.77, 0, 0.12, 'sine', 0.16);
-        this.playTone(1318.51, 0.07, 0.14, 'sine', 0.18);
+        if (!this.audioEnabled || platformPaused || userPaused) return;
+        this.playTone(987.77, 0, 0.12, 'sine', 0.18);
+        this.playTone(1318.51, 0.07, 0.14, 'sine', 0.2);
       }
 
       playDie() {
-        if (this.isMuted || platformPaused) return;
-        this.playTone(320.00, 0, 0.24, 'sawtooth', 0.18);
-        this.playTone(180.00, 0.1, 0.35, 'sawtooth', 0.18);
+        if (!this.audioEnabled || platformPaused || userPaused) return;
+        this.playTone(320.00, 0, 0.24, 'sawtooth', 0.2);
+        this.playTone(180.00, 0.1, 0.35, 'sawtooth', 0.2);
       }
 
       playRecord() {
-        if (this.isMuted || platformPaused) return;
+        if (!this.audioEnabled || platformPaused || userPaused) return;
         [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
           this.playTone(freq, idx * 0.08, 0.24, 'sine', 0.22);
         });
       }
     }
 
-    /* --- COORDINATES AND METRICS --- */
-    const V_WIDTH = 400;
-    let V_HEIGHT = 700;
-    const WALL_THICK = 24;
+    const audio = new PlayablesAudioEngine();
 
-    const TOP_HEADER_H = 70;
-    let TOP_SPIKE_Y = TOP_HEADER_H + 24;
-    let BOT_SPIKE_Y = V_HEIGHT - 65;
+    function wakeAudio() {
+      audio.init();
+    }
+    window.addEventListener('pointerdown', wakeAudio, { once: true });
+    window.addEventListener('keydown', wakeAudio, { once: true });
 
-    const GRAVITY = 0.42;
-    const JUMP_FORCE = -8.5;
-    const BASE_SPEED_X = 4.4;
-
-    const FIXED_STEP = 1 / 60;
-    const MAX_ACCUMULATOR = 0.1;
-
+    /* ==========================================================================
+       SISTEMA RESPONSIVO DINÂMICO (SEM VALORES ESTÁTICOS)
+       ========================================================================== */
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d', { alpha: false });
-    const audio = new SoundFX();
 
     const liveScoreEl = document.getElementById('live-score');
-    const soundBtn = document.getElementById('sound-toggle');
     const pauseBtn = document.getElementById('pause-toggle');
     const startScreen = document.getElementById('start-screen');
     const pauseScreen = document.getElementById('pause-screen');
@@ -661,45 +610,64 @@
     const pauseRestartBtn = document.getElementById('pause-restart-btn');
 
     let renderScale = 1;
-    let animFrameId = null;
+
+    // Coordenadas Virtuais Fluidas
+    let V_WIDTH = 400;
+    const V_HEIGHT = 800;
+    let arenaWidth = 400;
+    let arenaLeft = 0;
+    let arenaRight = 400;
+
+    const WALL_THICK = 24;
+    const TOP_HEADER_H = 80;
+    const TOP_SPIKE_Y = TOP_HEADER_H + 24;
+    const BOT_SPIKE_Y = V_HEIGHT - 75;
 
     const SLOT_COUNT = 9;
-    let SLOT_HEIGHT = (BOT_SPIKE_Y - TOP_SPIKE_Y) / SLOT_COUNT;
+    const SLOT_HEIGHT = (BOT_SPIKE_Y - TOP_SPIKE_Y) / SLOT_COUNT;
     const SPIKE_DEPTH = 24;
 
+    const GRAVITY = 0.42;
+    const JUMP_FORCE = -8.5;
+    const BASE_SPEED_X = 4.5;
+    const FIXED_STEP = 1 / 60;
+    const MAX_ACCUMULATOR = 0.1;
+
     function resizeCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      if (w === 0 || h === 0) return;
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.floor(rect.width * dpr);
-      canvas.height = Math.floor(rect.height * dpr);
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
 
-      renderScale = canvas.width / V_WIDTH;
-      V_HEIGHT = Math.round(canvas.height / renderScale);
+      renderScale = canvas.height / V_HEIGHT;
+      V_WIDTH = Math.round(canvas.width / renderScale);
 
-      BOT_SPIKE_Y = V_HEIGHT - 65;
-      SLOT_HEIGHT = (BOT_SPIKE_Y - TOP_SPIKE_Y) / SLOT_COUNT;
+      // Arena dinâmica centrada com proporção fluida
+      arenaWidth = Math.min(V_WIDTH, 480);
+      arenaLeft = Math.round((V_WIDTH - arenaWidth) / 2);
+      arenaRight = arenaLeft + arenaWidth;
 
       if (state === 'READY' || state === 'START') {
+        player.x = (arenaLeft + arenaRight) / 2;
         player.y = (TOP_SPIKE_Y + BOT_SPIKE_Y) / 2;
+      }
+
+      // Se o jogo estiver pausado, desenha um frame único para manter layout nítido
+      if (userPaused || platformPaused || state === 'PAUSED') {
+        render();
       }
     }
     window.addEventListener('resize', resizeCanvas);
 
-    // Unlocks Web Audio on first user gesture even if audio is disabled by YouTube
-    function wakeAudio() {
-      audio.init();
-    }
-    window.addEventListener('pointerdown', wakeAudio, { once: true });
-    window.addEventListener('keydown', wakeAudio, { once: true });
-
-    /* BACKGROUND */
+    /* ELEMENTOS VISUAIS E PARTICULAS */
     const bgStars = [];
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 75; i++) {
       bgStars.push({
-        x: Math.random() * V_WIDTH,
-        y: Math.random() * 1000,
+        x: Math.random() * 2000,
+        y: Math.random() * V_HEIGHT,
         size: Math.random() < 0.25 ? 2.5 : 1.5,
         alpha: Math.random() * 0.6 + 0.2,
         twinkleSpeed: Math.random() * 0.05 + 0.02,
@@ -709,10 +677,10 @@
     }
 
     const bgConfetti = [];
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 24; i++) {
       bgConfetti.push({
-        x: Math.random() * V_WIDTH,
-        y: Math.random() * 1000,
+        x: Math.random() * 2000,
+        y: Math.random() * V_HEIGHT,
         size: Math.random() * 3 + 2.5,
         rot: Math.random() * Math.PI,
         rotSpd: (Math.random() - 0.5) * 0.04,
@@ -722,27 +690,25 @@
       });
     }
 
-    let state = 'START';
-    let previousStateBeforePause = 'READY';
-    let score = 0;
-    let bestScore = 0;
     let screenShake = 0;
     let hoverTime = 0;
     let wallFlashLeft = 0;
     let wallFlashRight = 0;
 
     let player = {
-      x: V_WIDTH / 2,
-      y: V_HEIGHT / 2,
+      x: 200,
+      y: 400,
       vx: BASE_SPEED_X,
       vy: 0,
       radius: 21,
       trail: []
     };
 
-    let leftSpikes = [];
-    let rightSpikes = [];
-    let gem = null;
+    // Os espinhos agora guardam apenas os índices das fatias (0 a SLOT_COUNT - 1)
+    // eliminando qualquer cálculo estático em pixels que quebre em telas compridas!
+    let leftSpikeSlots = [];
+    let rightSpikeSlots = [];
+    let gem = null; // { relX: 0..1, relY: 0..1, size: 15, floatTime: 0 }
     let particles = [];
     let tapRipples = [];
 
@@ -768,42 +734,82 @@
       }
     }
 
-    // Comprehensive resume logic that safely restores gameplay state
-    function resumeGame() {
-      wakeAudio();
-      userPaused = false;
-      platformPaused = false;
-      savedStateBeforePlatformPause = null;
-
-      state = (previousStateBeforePause === 'READY' || previousStateBeforePause === 'PLAY')
-        ? previousStateBeforePause
-        : 'PLAY';
-
-      lastFrameTime = performance.now();
-      physicsAccumulator = 0;
-
-      if (!animFrameId) {
-        animFrameId = requestAnimationFrame(mainLoop);
+    /* ==========================================================================
+       CONGELAMENTO E RETOMADA RIGOROSOS DO MOTOR (YOUTUBE CERTIFIED)
+       ========================================================================== */
+    function pausarLogicaJogo(origem = 'user') {
+      if (origem === 'system') {
+        platformPaused = true;
+      } else {
+        userPaused = true;
       }
 
+      // 1. Congela o loop de animação imediatamente para economizar recursos e impedir queda fantasma
+      if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
+      }
+
+      // 2. Suspende a saída de áudio
+      audio.suspend();
+
+      // 3. Salva o estado anterior para retomada correta
+      if (state === 'PLAY' || state === 'READY') {
+        previousStateBeforePause = state;
+        state = 'PAUSED';
+      }
+
+      // 4. Limpa acumulador de física para não "explodir" em movimento quando retomar
+      physicsAccumulator = 0;
+      lastFrameTime = performance.now();
+
       updateScreensUI();
+      // Renderiza um último quadro estático com a tela congelada
+      render();
+    }
+
+    function retomarLogicaJogo(origem = 'user') {
+      wakeAudio();
+
+      if (origem === 'system') {
+        platformPaused = false;
+      } else {
+        userPaused = false;
+      }
+
+      // Se ambos os bloqueios (sistema e usuário) foram liberados, retoma a execução
+      if (!platformPaused && !userPaused) {
+        state = (previousStateBeforePause === 'READY' || previousStateBeforePause === 'PLAY')
+          ? previousStateBeforePause
+          : 'PLAY';
+
+        // Reavalia o áudio
+        audio.resume();
+
+        // Reseta carimbos de tempo para evitar pulo de delta time
+        lastFrameTime = performance.now();
+        physicsAccumulator = 0;
+
+        if (!animFrameId) {
+          animFrameId = requestAnimationFrame(mainLoop);
+        }
+
+        updateScreensUI();
+      }
     }
 
     function togglePause(forcePause = null) {
       wakeAudio();
-
       if (forcePause === true || (forcePause === null && (state === 'PLAY' || state === 'READY'))) {
-        userPaused = true;
-        previousStateBeforePause = state;
-        state = 'PAUSED';
-        updateScreensUI();
+        pausarLogicaJogo('user');
       } else if (forcePause === false || (forcePause === null && state === 'PAUSED')) {
-        resumeGame();
+        retomarLogicaJogo('user');
       }
     }
 
-    function generateSpikes(side) {
-      const activeSpikes = [];
+    /* GERAÇÃO RELATIVA DE ESPINHOS */
+    function generateSpikeSlots() {
+      const slots = [];
       let count = 2;
       if (score >= 4) count = 3;
       if (score >= 10) count = 4;
@@ -811,39 +817,18 @@
       if (score >= 35) count = 6;
       if (score >= 50) count = 7;
 
-      const indices = [];
-      while (indices.length < count) {
+      while (slots.length < count) {
         const r = Math.floor(Math.random() * SLOT_COUNT);
-        if (!indices.includes(r)) indices.push(r);
+        if (!slots.includes(r)) slots.push(r);
       }
-
-      indices.forEach(i => {
-        const y1 = TOP_SPIKE_Y + i * SLOT_HEIGHT;
-        const y2 = y1 + SLOT_HEIGHT;
-        const midY = (y1 + y2) / 2;
-        if (side === 'left') {
-          activeSpikes.push({
-            p1: { x: WALL_THICK, y: y1 },
-            p2: { x: WALL_THICK + SPIKE_DEPTH, y: midY },
-            p3: { x: WALL_THICK, y: y2 }
-          });
-        } else {
-          activeSpikes.push({
-            p1: { x: V_WIDTH - WALL_THICK, y: y1 },
-            p2: { x: V_WIDTH - WALL_THICK - SPIKE_DEPTH, y: midY },
-            p3: { x: V_WIDTH - WALL_THICK, y: y2 }
-          });
-        }
-      });
-
-      return activeSpikes;
+      return slots;
     }
 
     function spawnGem() {
       if (Math.random() < 0.7) {
         gem = {
-          x: V_WIDTH * 0.3 + Math.random() * (V_WIDTH * 0.4),
-          y: TOP_SPIKE_Y + 40 + Math.random() * (BOT_SPIKE_Y - TOP_SPIKE_Y - 80),
+          relX: 0.2 + Math.random() * 0.6, // 20% a 80% da arena útil
+          relY: 0.15 + Math.random() * 0.7, // 15% a 85% da altura útil
           size: 15,
           floatTime: 0
         };
@@ -880,66 +865,67 @@
       return (px - (x1 + t * (x2 - x1))) ** 2 + (py - (y1 + t * (y2 - y1))) ** 2;
     }
 
-    function checkSpikeCollision(spike) {
+    function checkSpikeSlotCollision(side, slotIndex) {
+      const leftWallX = arenaLeft + WALL_THICK;
+      const rightWallX = arenaRight - WALL_THICK;
+      const y1 = TOP_SPIKE_Y + slotIndex * SLOT_HEIGHT;
+      const y2 = y1 + SLOT_HEIGHT;
+      const midY = (y1 + y2) / 2;
+
+      let p1, p2, p3;
+      if (side === 'left') {
+        p1 = { x: leftWallX, y: y1 };
+        p2 = { x: leftWallX + SPIKE_DEPTH, y: midY };
+        p3 = { x: leftWallX, y: y2 };
+      } else {
+        p1 = { x: rightWallX, y: y1 };
+        p2 = { x: rightWallX - SPIKE_DEPTH, y: midY };
+        p3 = { x: rightWallX, y: y2 };
+      }
+
       const colRadiusSq = (player.radius * 0.65) ** 2;
-      const d1 = distSqToSegment(player.x, player.y, spike.p1.x, spike.p1.y, spike.p2.x, spike.p2.y);
-      const d2 = distSqToSegment(player.x, player.y, spike.p2.x, spike.p2.y, spike.p3.x, spike.p3.y);
+      const d1 = distSqToSegment(player.x, player.y, p1.x, p1.y, p2.x, p2.y);
+      const d2 = distSqToSegment(player.x, player.y, p2.x, p2.y, p3.x, p3.y);
       return d1 < colRadiusSq || d2 < colRadiusSq;
     }
 
+    /* PERSISTÊNCIA NA NUVEM VIA SDK DO YOUTUBE */
     async function saveHighScore(newRecord) {
       if (!isDataLoaded) return;
-
       bestScore = Math.max(bestScore, newRecord);
       menuBestVal.textContent = bestScore;
 
-      const isInsidePlayables = typeof ytgame !== 'undefined' && Boolean(ytgame.IN_PLAYABLES_ENV);
-
-      if (isInsidePlayables && ytgame.game?.saveData) {
+      if (typeof ytgame !== 'undefined' && ytgame.game?.saveData) {
         try {
           await ytgame.game.saveData(JSON.stringify({ bestScore }));
-          if (ytgame.engagement?.sendScore) {
-            ytgame.engagement.sendScore({ value: Math.floor(bestScore) });
-          }
         } catch (err) {
-          console.warn('YT Playables Save Error:', err);
+          console.warn('Erro ao salvar dados no YouTube Playables:', err);
         }
-      } else if (!isInsidePlayables) {
-        try {
-          localStorage.setItem('star_tap_record', bestScore.toString());
-        } catch (e) {}
       }
     }
 
     async function loadSavedData() {
-      const isInsidePlayables = typeof ytgame !== 'undefined' && Boolean(ytgame.IN_PLAYABLES_ENV);
-
-      if (isInsidePlayables && ytgame.game?.loadData) {
+      if (typeof ytgame !== 'undefined' && ytgame.game?.loadData) {
         try {
-          const cloudDataStr = await ytgame.game.loadData();
-          if (cloudDataStr) {
-            const parsed = typeof cloudDataStr === 'string' ? JSON.parse(cloudDataStr) : cloudDataStr;
+          const cloudData = await ytgame.game.loadData();
+          if (cloudData) {
+            const parsed = typeof cloudData === 'string' ? JSON.parse(cloudData) : cloudData;
             if (parsed && typeof parsed.bestScore === 'number') {
               bestScore = parsed.bestScore;
             }
           }
         } catch (err) {
-          console.warn('YT Playables Load Error:', err);
-        }
-      } else if (!isInsidePlayables) {
-        try {
-          bestScore = parseInt(localStorage.getItem('star_tap_record') || '0', 10);
-        } catch (e) {
-          bestScore = 0;
+          console.warn('Erro ao carregar dados do YouTube Playables:', err);
         }
       }
       isDataLoaded = true;
       menuBestVal.textContent = bestScore;
+      gameoverRecordMsg.textContent = `BEST SCORE: ${bestScore}`;
     }
 
     function triggerGameOver() {
       state = 'GAMEOVER';
-      gameOverTimestamp = performance.now(); // Marks the exact moment of defeat
+      gameOverTimestamp = performance.now();
       screenShake = 16;
       audio.playDie();
       emitParticles(player.x, player.y, '#ff2a78', 26, 6);
@@ -961,18 +947,18 @@
     }
 
     function prepareReadyState() {
-      if (state === 'READY' || platformPaused) return;
+      if (state === 'READY' || platformPaused || userPaused) return;
 
       wakeAudio();
 
-      player.x = V_WIDTH / 2;
+      player.x = (arenaLeft + arenaRight) / 2;
       player.y = (TOP_SPIKE_Y + BOT_SPIKE_Y) / 2;
       player.vx = BASE_SPEED_X;
       player.vy = 0;
       player.trail = [];
       score = 0;
-      leftSpikes = [];
-      rightSpikes = [];
+      leftSpikeSlots = [];
+      rightSpikeSlots = [];
       gem = null;
       particles = [];
       tapRipples = [];
@@ -991,11 +977,11 @@
         startScreen.classList.remove('active', 'fading-out');
         pauseScreen.classList.remove('active', 'fading-out');
         gameoverScreen.classList.remove('active', 'fading-out');
-      }, 250);
+      }, 220);
     }
 
     function handleAction() {
-      if (platformPaused) return;
+      if (platformPaused || userPaused) return;
 
       wakeAudio();
 
@@ -1014,58 +1000,29 @@
         spawnTapRipple(player.x, player.y + player.radius);
         emitParticles(player.x, player.y + player.radius, '#ffd700', 5, 2.5);
       } else if (state === 'PAUSED') {
-        resumeGame();
+        retomarLogicaJogo('user');
       }
     }
 
-    let lastSoundToggleTime = 0;
-    function handleSoundToggle(e) {
-      if (e) e.stopPropagation();
-      const now = performance.now();
-      if (now - lastSoundToggleTime < 250) return;
-      lastSoundToggleTime = now;
-
-      wakeAudio();
-      audio.toggleUserMute();
-    }
-
-    soundBtn.addEventListener('pointerdown', handleSoundToggle);
-    soundBtn.addEventListener('click', handleSoundToggle);
-
-    let lastPauseToggleTime = 0;
-    function handlePauseToggle(e) {
-      if (e) e.stopPropagation();
-      const now = performance.now();
-      if (now - lastPauseToggleTime < 250) return;
-      lastPauseToggleTime = now;
-
+    /* CONTROLE DE EVENTOS */
+    pauseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       togglePause();
-    }
-
-    pauseBtn.addEventListener('pointerdown', handlePauseToggle);
-    pauseBtn.addEventListener('click', handlePauseToggle);
+    });
 
     startBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       prepareReadyState();
     });
 
-    let lastResumeActionTime = 0;
-    function handleResumeBtn(e) {
-      if (e) e.stopPropagation();
-      const now = performance.now();
-      if (now - lastResumeActionTime < 200) return;
-      lastResumeActionTime = now;
-
-      resumeGame();
-    }
-
-    resumeBtn.addEventListener('pointerdown', handleResumeBtn);
-    resumeBtn.addEventListener('click', handleResumeBtn);
+    resumeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      retomarLogicaJogo('user');
+    });
 
     restartBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (performance.now() - gameOverTimestamp < 350) return; // Debounce to prevent double clicks
+      if (performance.now() - gameOverTimestamp < 350) return;
       prepareReadyState();
     });
 
@@ -1076,20 +1033,18 @@
     });
 
     window.addEventListener('pointerdown', (e) => {
-      // Ignore touches on buttons and top HUD
       if (e.target.closest('#top-hud') || e.target.closest('.ui-overlay.active button')) return;
-      // On Game Over, never restart by clicking randomly on the screen (prevents accidental replay)
       if (state === 'GAMEOVER') return;
       handleAction();
     });
 
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Escape') {
-        // Mandatory: DO NOT call preventDefault() on Escape
+        // NUNCA chamar preventDefault() no Escape (Diretriz YouTube Playables)
         if (state === 'PAUSED') {
-          togglePause(false);
+          retomarLogicaJogo('user');
         } else if (state === 'PLAY' || state === 'READY') {
-          togglePause(true);
+          pausarLogicaJogo('user');
         }
         return;
       }
@@ -1110,6 +1065,23 @@
       }
     });
 
+    // LISTENERS DE SEGUNDO PLANO (MINIMIZAÇÃO DO APP E PERDA DE FOCO)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        pausarLogicaJogo('system');
+      } else {
+        // Se a plataforma não for YouTube Playables (ex: teste em navegador puro), restaura
+        if (typeof ytgame === 'undefined') {
+          retomarLogicaJogo('system');
+        }
+      }
+    });
+
+    window.addEventListener('pagehide', () => {
+      pausarLogicaJogo('system');
+    });
+
+    /* RENDERIZADOR DO PERSONAGEM */
     function drawCuteStar(x, y, radius, angle = 0) {
       ctx.save();
       ctx.translate(x, y);
@@ -1189,8 +1161,12 @@
       ctx.restore();
     }
 
+    /* ==========================================================================
+       LOOP FÍSICO COM PARADA TOTAL E VERIFICAÇÃO DE COLISÕES
+       ========================================================================== */
     function tickFixedPhysics() {
-      if (platformPaused || state === 'PAUSED') return;
+      // Congelamento absoluto do motor
+      if (platformPaused || userPaused || state === 'PAUSED') return;
 
       if (screenShake > 0) screenShake *= 0.88;
       if (screenShake < 0.2) screenShake = 0;
@@ -1235,7 +1211,7 @@
       player.x += player.vx;
       player.y += player.vy;
 
-      player.trail.unshift({ x: player.x, y: player.y, vx: player.vx, vy: player.vy });
+      player.trail.unshift({ x: player.x, y: player.y });
       if (player.trail.length > 7) player.trail.pop();
 
       if (Math.random() < 0.4) {
@@ -1251,66 +1227,80 @@
         });
       }
 
-      // Collision with Ceiling and Floor Spikes
+      // Colisão com teto e chão
       if (player.y - player.radius <= TOP_SPIKE_Y || player.y + player.radius >= BOT_SPIKE_Y) {
         triggerGameOver();
         return;
       }
 
-      // Collision with Right Wall
-      if (player.x + player.radius >= V_WIDTH - WALL_THICK) {
-        player.x = V_WIDTH - WALL_THICK - player.radius;
+      const leftWallX = arenaLeft + WALL_THICK;
+      const rightWallX = arenaRight - WALL_THICK;
+
+      // Rebater na parede direita
+      if (player.x + player.radius >= rightWallX) {
+        player.x = rightWallX - player.radius;
         player.vx = -Math.abs(player.vx);
         wallFlashRight = 1.0;
         score++;
         liveScoreEl.textContent = `Score: ${score}`;
         audio.playBounce(score);
         emitParticles(player.x, player.y, '#00e5ff', 12, 4);
-        rightSpikes = [];
-        leftSpikes = generateSpikes('left');
+        rightSpikeSlots = [];
+        leftSpikeSlots = generateSpikeSlots();
         spawnGem();
       }
 
-      // Collision with Left Wall
-      if (player.x - player.radius <= WALL_THICK) {
-        player.x = WALL_THICK + player.radius;
+      // Rebater na parede esquerda
+      if (player.x - player.radius <= leftWallX) {
+        player.x = leftWallX + player.radius;
         player.vx = Math.abs(player.vx);
         wallFlashLeft = 1.0;
         score++;
         liveScoreEl.textContent = `Score: ${score}`;
         audio.playBounce(score);
         emitParticles(player.x, player.y, '#00e5ff', 12, 4);
-        leftSpikes = [];
-        rightSpikes = generateSpikes('right');
+        leftSpikeSlots = [];
+        rightSpikeSlots = generateSpikeSlots();
         spawnGem();
       }
 
-      // Collision with Side Spikes
-      const activeSpikes = player.vx > 0 ? rightSpikes : leftSpikes;
-      for (let i = 0; i < activeSpikes.length; i++) {
-        if (checkSpikeCollision(activeSpikes[i])) {
-          triggerGameOver();
-          return;
+      // Checar espinhos na parede ativa
+      if (player.vx > 0) {
+        for (let i = 0; i < rightSpikeSlots.length; i++) {
+          if (checkSpikeSlotCollision('right', rightSpikeSlots[i])) {
+            triggerGameOver();
+            return;
+          }
+        }
+      } else {
+        for (let i = 0; i < leftSpikeSlots.length; i++) {
+          if (checkSpikeSlotCollision('left', leftSpikeSlots[i])) {
+            triggerGameOver();
+            return;
+          }
         }
       }
 
-      // Star / Gem Collection
+      // Coleta da Joia / Estrela
       if (gem) {
         gem.floatTime += 0.05;
-        const hoverY = gem.y + Math.sin(gem.floatTime) * 3.5;
-        const dx = player.x - gem.x;
-        const dy = player.y - hoverY;
+        const gemRealX = leftWallX + gem.relX * (rightWallX - leftWallX);
+        const gemRealY = TOP_SPIKE_Y + 40 + gem.relY * (BOT_SPIKE_Y - TOP_SPIKE_Y - 80) + Math.sin(gem.floatTime) * 3.5;
+
+        const dx = player.x - gemRealX;
+        const dy = player.y - gemRealY;
         if ((dx * dx + dy * dy) < (player.radius + gem.size) ** 2) {
           score += 3;
           liveScoreEl.textContent = `Score: ${score}`;
           audio.playGem();
-          emitParticles(gem.x, hoverY, '#ffd700', 16, 4.5);
-          emitParticles(gem.x, hoverY, '#00e5ff', 8, 3.5);
+          emitParticles(gemRealX, gemRealY, '#ffd700', 16, 4.5);
+          emitParticles(gemRealX, gemRealY, '#00e5ff', 8, 3.5);
           gem = null;
         }
       }
     }
 
+    /* RENDERIZAÇÃO */
     function render() {
       if (canvas.width === 0 || canvas.height === 0) return;
 
@@ -1327,24 +1317,28 @@
         ctx.translate(ox, oy);
       }
 
+      // Fundo
       ctx.fillStyle = '#040714';
       ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
 
+      // Estrelas de fundo
       const now = performance.now() * 0.003;
       for (let i = 0; i < bgStars.length; i++) {
         const s = bgStars[i];
-        if (s.y > V_HEIGHT) s.y = Math.random() * V_HEIGHT;
+        const sX = s.x % V_WIDTH;
         const a = s.alpha * (0.65 + 0.35 * Math.sin(now * s.twinkleSpeed * 8 + s.phase));
         ctx.fillStyle = s.color;
         ctx.globalAlpha = a;
-        ctx.fillRect(s.x, s.y, s.size, s.size);
+        ctx.fillRect(sX, s.y, s.size, s.size);
       }
       ctx.globalAlpha = 1.0;
 
+      // Confetes
       for (let i = 0; i < bgConfetti.length; i++) {
         const c = bgConfetti[i];
+        const cX = c.x % V_WIDTH;
         ctx.save();
-        ctx.translate(c.x, c.y);
+        ctx.translate(cX, c.y);
         ctx.rotate(c.rot);
         ctx.fillStyle = c.color;
         ctx.globalAlpha = c.alpha;
@@ -1353,14 +1347,16 @@
       }
       ctx.globalAlpha = 1.0;
 
+      // Placar gigante de fundo
       if (state === 'PLAY' || state === 'PAUSED') {
-        ctx.fillStyle = 'rgba(0, 229, 255, 0.05)';
-        ctx.font = '900 140px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(0, 229, 255, 0.06)';
+        ctx.font = '900 150px system-ui, -apple-system, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(score, V_WIDTH / 2, (TOP_SPIKE_Y + BOT_SPIKE_Y) / 2);
+        ctx.fillText(score, (arenaLeft + arenaRight) / 2, (TOP_SPIKE_Y + BOT_SPIKE_Y) / 2);
       }
 
+      // Efeitos de toque
       for (let i = 0; i < tapRipples.length; i++) {
         const r = tapRipples[i];
         ctx.strokeStyle = '#00e5ff';
@@ -1369,18 +1365,16 @@
         ctx.beginPath();
         ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
         ctx.stroke();
-
-        if (r.r > 12) {
-          ctx.beginPath();
-          ctx.arc(r.x, r.y, r.r * 0.65, 0, Math.PI * 2);
-          ctx.stroke();
-        }
       }
       ctx.globalAlpha = 1.0;
 
+      // Paredes e trilhos neon
+      const leftWallX = arenaLeft + WALL_THICK;
+      const rightWallX = arenaRight - WALL_THICK;
+
       ctx.fillStyle = '#060a1a';
-      ctx.fillRect(0, 0, WALL_THICK, V_HEIGHT);
-      ctx.fillRect(V_WIDTH - WALL_THICK, 0, WALL_THICK, V_HEIGHT);
+      ctx.fillRect(arenaLeft, 0, WALL_THICK, V_HEIGHT);
+      ctx.fillRect(rightWallX, 0, WALL_THICK, V_HEIGHT);
 
       const drawNeonRail = (x, flashAlpha) => {
         ctx.strokeStyle = 'rgba(0, 229, 255, 0.12)';
@@ -1411,13 +1405,14 @@
         }
       };
 
-      drawNeonRail(WALL_THICK, wallFlashLeft);
-      drawNeonRail(V_WIDTH - WALL_THICK, wallFlashRight);
+      drawNeonRail(leftWallX, wallFlashLeft);
+      drawNeonRail(rightWallX, wallFlashRight);
 
+      // Espinhos do Teto e Chão calculados para preencher perfeitamente a largura
       const spikeW = 20;
-      const countSpikes = Math.ceil(V_WIDTH / spikeW);
+      const arenaSpikeCount = Math.ceil((arenaRight - arenaLeft) / spikeW);
 
-      /* --- TOP SPIKES --- */
+      /* TOPO */
       ctx.fillStyle = '#1c0515';
       ctx.fillRect(0, 0, V_WIDTH, TOP_HEADER_H);
 
@@ -1426,24 +1421,17 @@
       ctx.lineWidth = 2.2;
 
       ctx.beginPath();
-      ctx.moveTo(0, TOP_HEADER_H);
-      for (let i = 0; i < countSpikes; i++) {
-        const sx = i * spikeW;
+      ctx.moveTo(arenaLeft, TOP_HEADER_H);
+      for (let i = 0; i < arenaSpikeCount; i++) {
+        const sx = arenaLeft + i * spikeW;
         ctx.lineTo(sx + spikeW / 2, TOP_SPIKE_Y);
-        ctx.lineTo(sx + spikeW, TOP_HEADER_H);
+        ctx.lineTo(Math.min(arenaRight, sx + spikeW), TOP_HEADER_H);
       }
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
 
-      ctx.strokeStyle = 'rgba(255, 42, 120, 0.4)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(0, TOP_HEADER_H);
-      ctx.lineTo(V_WIDTH, TOP_HEADER_H);
-      ctx.stroke();
-
-      /* --- BOTTOM SPIKES --- */
+      /* BASE */
       const botBase = BOT_SPIKE_Y + 24;
       ctx.fillStyle = '#1c0515';
       ctx.fillRect(0, botBase, V_WIDTH, V_HEIGHT - botBase);
@@ -1453,55 +1441,53 @@
       ctx.lineWidth = 2.2;
 
       ctx.beginPath();
-      ctx.moveTo(0, botBase);
-      for (let i = 0; i < countSpikes; i++) {
-        const sx = i * spikeW;
+      ctx.moveTo(arenaLeft, botBase);
+      for (let i = 0; i < arenaSpikeCount; i++) {
+        const sx = arenaLeft + i * spikeW;
         ctx.lineTo(sx + spikeW / 2, BOT_SPIKE_Y);
-        ctx.lineTo(sx + spikeW, botBase);
+        ctx.lineTo(Math.min(arenaRight, sx + spikeW), botBase);
       }
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
 
-      ctx.strokeStyle = 'rgba(255, 42, 120, 0.4)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(0, botBase);
-      ctx.lineTo(V_WIDTH, botBase);
-      ctx.stroke();
-
-      /* --- SIDE SPIKES --- */
-      const drawSpikesList = (list) => {
-        if (list.length === 0) return;
+      /* ESPINHOS LATERAIS RENDERIZADOS DINAMICAMENTE */
+      const renderSpikes = (side, slots) => {
+        if (slots.length === 0) return;
         ctx.fillStyle = '#8a0f43';
         ctx.strokeStyle = '#ff2a78';
         ctx.lineWidth = 2.2;
         ctx.beginPath();
-        for (let i = 0; i < list.length; i++) {
-          const sp = list[i];
-          ctx.moveTo(sp.p1.x, sp.p1.y);
-          ctx.lineTo(sp.p2.x, sp.p2.y);
-          ctx.lineTo(sp.p3.x, sp.p3.y);
+        for (let i = 0; i < slots.length; i++) {
+          const slot = slots[i];
+          const y1 = TOP_SPIKE_Y + slot * SLOT_HEIGHT;
+          const y2 = y1 + SLOT_HEIGHT;
+          const midY = (y1 + y2) / 2;
+          if (side === 'left') {
+            ctx.moveTo(leftWallX, y1);
+            ctx.lineTo(leftWallX + SPIKE_DEPTH, midY);
+            ctx.lineTo(leftWallX, y2);
+          } else {
+            ctx.moveTo(rightWallX, y1);
+            ctx.lineTo(rightWallX - SPIKE_DEPTH, midY);
+            ctx.lineTo(rightWallX, y2);
+          }
         }
         ctx.fill();
         ctx.stroke();
       };
-      drawSpikesList(leftSpikes);
-      drawSpikesList(rightSpikes);
 
-      // Star Gem
+      renderSpikes('left', leftSpikeSlots);
+      renderSpikes('right', rightSpikeSlots);
+
+      /* ESTRELA COLETÁVEL DINÂMICA */
       if (gem) {
-        const hoverY = gem.y + Math.sin(gem.floatTime) * 3.5;
-        ctx.strokeStyle = 'rgba(255, 215, 0, 0.4)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(gem.x - 12, hoverY + 4); ctx.lineTo(gem.x - 2, hoverY + 1);
-        ctx.moveTo(gem.x - 16, hoverY + 9); ctx.lineTo(gem.x - 4, hoverY + 5);
-        ctx.stroke();
-
-        drawCuteStar(gem.x, hoverY, gem.size, 0);
+        const gemRealX = leftWallX + gem.relX * (rightWallX - leftWallX);
+        const gemRealY = TOP_SPIKE_Y + 40 + gem.relY * (BOT_SPIKE_Y - TOP_SPIKE_Y - 80) + Math.sin(gem.floatTime) * 3.5;
+        drawCuteStar(gemRealX, gemRealY, gem.size, 0);
       }
 
+      /* PARTÍCULAS */
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         ctx.fillStyle = p.color;
@@ -1510,7 +1496,7 @@
       }
       ctx.globalAlpha = 1.0;
 
-      // Player & Trail
+      /* JOGADOR */
       if (state !== 'GAMEOVER' && state !== 'START') {
         if (player.trail.length > 1) {
           ctx.strokeStyle = '#ffd700';
@@ -1535,11 +1521,14 @@
       ctx.restore();
     }
 
-    let lastFrameTime = performance.now();
-    let physicsAccumulator = 0;
-
+    /* ==========================================================================
+       LOOP PRINCIPAL COM CONTROLE DE DELTA TIME
+       ========================================================================== */
     function mainLoop(currentFrameTime) {
-      if (platformPaused) return;
+      if (platformPaused || userPaused || state === 'PAUSED') {
+        animFrameId = null;
+        return;
+      }
 
       let delta = (currentFrameTime - lastFrameTime) / 1000;
       lastFrameTime = currentFrameTime;
@@ -1556,139 +1545,80 @@
       animFrameId = requestAnimationFrame(mainLoop);
     }
 
-    // Handles YouTube platform pause event (background tab, interstitial ad, or test suite)
-    function handlePlatformPause() {
-      platformPaused = true;
-      if (animFrameId) {
-        cancelAnimationFrame(animFrameId);
-        animFrameId = null;
-      }
-      audio.suspend();
-
-      if (state !== 'PAUSED') {
-        savedStateBeforePlatformPause = state;
-      }
-
-      if (state === 'PLAY' || state === 'READY') {
-        previousStateBeforePause = state;
-        state = 'PAUSED';
-      }
-
-      updateScreensUI();
-
-      if (isDataLoaded) {
-        saveHighScore(bestScore);
-      }
-    }
-
-    // Handles YouTube platform resume event
-    function handlePlatformResume() {
-      platformPaused = false;
-      audio.resume();
-      lastFrameTime = performance.now();
-      physicsAccumulator = 0;
-
-      // If the user did not manually open pause before, restore gameplay automatically
-      if (!userPaused) {
-        if (savedStateBeforePlatformPause) {
-          state = savedStateBeforePlatformPause;
-          savedStateBeforePlatformPause = null;
-        } else if (state === 'PAUSED') {
-          state = (previousStateBeforePause === 'READY' || previousStateBeforePause === 'PLAY')
-            ? previousStateBeforePause
-            : 'PLAY';
-        }
-      }
-
-      if (!animFrameId) {
-        animFrameId = requestAnimationFrame(mainLoop);
-      }
-
-      updateScreensUI();
-    }
-
-    /* --- 100% CERTIFIED INITIALIZATION --- */
-    async function initYouTubePlayables() {
+    /* ==========================================================================
+       CICLO DE VIDA DO YOUTUBE PLAYABLES SDK
+       ========================================================================== */
+    async function initPlayable() {
       resizeCanvas();
       updateScreensUI();
+
+      // 1. Desenha o primeiro quadro estático imediatamente
       render();
 
-      const isInsidePlayables = typeof ytgame !== 'undefined' && Boolean(ytgame.IN_PLAYABLES_ENV);
-
-      // 1. Hide custom audio button inside the YouTube environment
-      if (isInsidePlayables && soundBtn) {
-        soundBtn.style.display = 'none';
-      }
-
-      // 2. Notify first rendered frame
+      // 2. Notifica ao YouTube que o primeiro frame foi renderizado
       if (typeof ytgame !== 'undefined' && ytgame.game?.firstFrameReady) {
         try {
           ytgame.game.firstFrameReady();
         } catch (e) {
-          console.warn('firstFrameReady error:', e);
+          console.warn('firstFrameReady:', e);
         }
       }
 
-      // 3. REGISTER LISTENERS IMMEDIATELY (BEFORE LOAD DATA)
-      if (isInsidePlayables && ytgame.system) {
+      // 3. Registra os callbacks oficiais de ciclo de vida do YouTube
+      if (typeof ytgame !== 'undefined' && ytgame.system) {
         if (typeof ytgame.system.isAudioEnabled === 'function') {
           try {
-            const isEnabled = ytgame.system.isAudioEnabled();
-            if (typeof isEnabled === 'boolean') {
-              audio.setPlatformMute(!isEnabled);
-            }
+            audio.setAudioEnabled(ytgame.system.isAudioEnabled());
           } catch (e) {
-            console.warn('isAudioEnabled error:', e);
+            console.warn('isAudioEnabled:', e);
           }
         }
 
         if (typeof ytgame.system.onAudioEnabledChange === 'function') {
           try {
             ytgame.system.onAudioEnabledChange((enabled) => {
-              if (typeof enabled === 'boolean') {
-                audio.setPlatformMute(!enabled);
-              }
+              audio.setAudioEnabled(enabled);
             });
           } catch (e) {
-            console.warn('onAudioEnabledChange error:', e);
+            console.warn('onAudioEnabledChange:', e);
           }
         }
 
+        // Evento de Pausa do App do YouTube
         if (typeof ytgame.system.onPause === 'function') {
           ytgame.system.onPause(() => {
-            handlePlatformPause();
+            pausarLogicaJogo('system');
           });
         }
 
+        // Evento de Retomada do App do YouTube
         if (typeof ytgame.system.onResume === 'function') {
           ytgame.system.onResume(() => {
-            handlePlatformResume();
+            retomarLogicaJogo('system');
           });
         }
       }
 
-      audio.updateUI();
-
-      // 4. Start render/graphics loop
+      // 4. Inicia o loop gráfico contínuo
       lastFrameTime = performance.now();
       if (!animFrameId) {
         animFrameId = requestAnimationFrame(mainLoop);
       }
 
-      // 5. Load saved cloud data
+      // 5. Carrega pontuações da nuvem do Google
       await loadSavedData();
 
-      // 6. Notify that the game is 100% interactive and ready
+      // 6. Notifica que o jogo está 100% pronto para interação
       if (typeof ytgame !== 'undefined' && ytgame.game?.gameReady) {
         try {
           ytgame.game.gameReady();
         } catch (e) {
-          console.warn('gameReady error:', e);
+          console.warn('gameReady:', e);
         }
       }
     }
 
-    window.addEventListener('DOMContentLoaded', initYouTubePlayables);
+    window.addEventListener('DOMContentLoaded', initPlayable);
   </script>
 </body>
 </html>
