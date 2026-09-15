@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>STAR TAP - Arcade</title>
 
-  <!-- YOUTUBE PLAYABLES SDK (Obrigatório ser a primeira tag de script antes do jogo) -->
+  <!-- PASSO 3: OBRIGATÓRIO SER A PRIMEIRA TAG DE SCRIPT ANTES DO JOGO -->
   <script src="https://www.youtube.com/game_api/v1"></script>
 
   <style>
@@ -46,6 +46,7 @@
       display: block;
       width: 100%;
       height: 100%;
+      touch-action: none;
     }
 
     /* TOP HUD BAR */
@@ -55,7 +56,7 @@
       left: 0;
       width: 100%;
       height: calc(56px + env(safe-area-inset-top, 0px));
-      padding: max(8px, env(safe-area-inset-top, 8px)) 16px 6px 16px;
+      padding: max(8px, env(safe-area-inset-top, 8px)) max(16px, env(safe-area-inset-right, 16px)) 6px max(16px, env(safe-area-inset-left, 16px));
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -545,26 +546,29 @@
 
   <script>
     /* ==========================================================================
-       ESTADOS DO JOGO E CONTROLE DE AMBIENTE PLAYABLES
+       PASSO 5: VERIFICAÇÃO DE AMBIENTE PLAYABLES
        ========================================================================== */
     const isPlayablesEnv = Boolean(window.ytgame && window.ytgame.IN_PLAYABLES_ENV);
 
     let platformPaused = false;
     let userPaused = false;
     let isDataLoaded = false;
+    let isSavingProgress = false;
+    let hasPendingSave = false;
     let userInteracted = false;
     let gameOverTimestamp = 0;
     let state = 'START';
-    let previousStateBeforePause = 'READY';
+    let savedStateBeforePause = null;
     let score = 0;
     let bestScore = 0;
+    let recordSoundTimer = null;
 
     let animFrameId = null;
     let lastFrameTime = performance.now();
     let physicsAccumulator = 0;
 
     /* ==========================================================================
-       ÁUDIO EM CONFORMIDADE COM A API DE ÁUDIO DO YOUTUBE PLAYABLES
+       PASSO 7: ÁUDIO COMPATÍVEL COM YOUTUBE PLAYABLES
        ========================================================================== */
     class PlayablesAudioEngine {
       constructor() {
@@ -575,16 +579,17 @@
       }
 
       init() {
+        if (!this.audioEnabled) return;
         if (!this.ctx) {
           const AudioContextClass = window.AudioContext || window.webkitAudioContext;
           if (AudioContextClass) {
             this.ctx = new AudioContextClass();
             this.masterGain = this.ctx.createGain();
-            this.masterGain.gain.setValueAtTime(this.audioEnabled ? 0.35 : 0, this.ctx.currentTime);
+            this.masterGain.gain.setValueAtTime(0.35, this.ctx.currentTime);
             this.masterGain.connect(this.ctx.destination);
           }
         }
-        if (this.ctx && this.ctx.state === 'suspended' && this.audioEnabled && !platformPaused && !userPaused) {
+        if (this.ctx && this.ctx.state === 'suspended' && !platformPaused && !userPaused) {
           this.ctx.resume().catch(() => {});
         }
       }
@@ -688,7 +693,7 @@
     window.addEventListener('keydown', wakeAudio, { once: true });
 
     /* ==========================================================================
-       SISTEMA RESPONSIVO DO CANVAS
+       PASSO 10: SISTEMA RESPONSIVO (CANVAS & PROPORÇÕES)
        ========================================================================== */
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d', { alpha: false });
@@ -732,9 +737,8 @@
     const MAX_ACCUMULATOR = 0.1;
 
     function resizeCanvas() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      if (w === 0 || h === 0) return;
+      const w = window.innerWidth || document.documentElement.clientWidth || 360;
+      const h = window.innerHeight || document.documentElement.clientHeight || 640;
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.floor(w * dpr);
@@ -758,7 +762,7 @@
     }
     window.addEventListener('resize', resizeCanvas);
 
-    /* ELEMENTOS VISUAIS */
+    /* CENÁRIO E PARTÍCULAS */
     const bgStars = [];
     for (let i = 0; i < 75; i++) {
       bgStars.push({
@@ -829,13 +833,18 @@
     }
 
     /* ==========================================================================
-       CONGELAMENTO E RETOMADA
+       PASSO 6: GERENCIAMENTO ESTRITO DE PAUSE E RESUME
        ========================================================================== */
     function pausarLogicaJogo(origem = 'user') {
       if (origem === 'system') {
         platformPaused = true;
       } else {
         userPaused = true;
+      }
+
+      if (recordSoundTimer) {
+        clearTimeout(recordSoundTimer);
+        recordSoundTimer = null;
       }
 
       if (animFrameId) {
@@ -845,9 +854,12 @@
 
       audio.suspend();
 
-      if (state === 'PLAY' || state === 'READY') {
-        previousStateBeforePause = state;
-        state = 'PAUSED';
+      // Preserva o estado original antes de pausar
+      if (state !== 'PAUSED') {
+        savedStateBeforePause = state;
+        if (state === 'PLAY' || state === 'READY') {
+          state = 'PAUSED';
+        }
       }
 
       physicsAccumulator = 0;
@@ -866,10 +878,14 @@
         userPaused = false;
       }
 
+      // Só retoma se tanto o usuário quanto a plataforma permitirem
       if (!platformPaused && !userPaused) {
-        state = (previousStateBeforePause === 'READY' || previousStateBeforePause === 'PLAY')
-          ? previousStateBeforePause
-          : 'PLAY';
+        if (savedStateBeforePause) {
+          state = savedStateBeforePause;
+          savedStateBeforePause = null;
+        } else if (state === 'PAUSED') {
+          state = 'PLAY';
+        }
 
         audio.resume();
 
@@ -975,55 +991,82 @@
     }
 
     /* ==========================================================================
-       INTEGRAÇÃO PLAYABLES: SALVAR DADOS E ENVIAR PLACAR (SENDSCORE)
+       PASSOS 8 & 9: PERSISTÊNCIA NA NUVEM E PLACAR NATIVO
        ========================================================================== */
     async function submitScoreToYouTube(val) {
+      const integerScore = Math.max(0, Math.floor(Number(val) || 0));
       if (typeof ytgame !== 'undefined' && ytgame.engagement?.sendScore) {
         try {
-          await ytgame.engagement.sendScore({ value: Math.floor(val) });
+          await ytgame.engagement.sendScore({ value: integerScore });
         } catch (err) {
-          console.warn('Falha ao enviar score para o YouTube Playables:', err);
+          console.warn('Falha ao enviar score para YouTube Playables:', err);
         }
       }
     }
 
     async function saveHighScore(newRecord) {
       if (!isDataLoaded) return;
-      bestScore = Math.max(bestScore, newRecord);
+      bestScore = Math.max(bestScore, Math.floor(newRecord));
       menuBestVal.textContent = bestScore;
+      gameoverRecordMsg.textContent = `BEST SCORE: ${bestScore}`;
 
-      // 1. Salva na nuvem do YouTube (Passo 8 do Guia)
-      if (typeof ytgame !== 'undefined' && ytgame.game?.saveData) {
-        try {
-          await ytgame.game.saveData(JSON.stringify({ bestScore }));
-        } catch (err) {
-          console.warn('Erro ao salvar dados no YouTube Playables:', err);
-        }
-      } else {
-        try { localStorage.setItem('startap_best', String(bestScore)); } catch (_) {}
+      // Evita chamadas concorrentes a saveData()
+      if (isSavingProgress) {
+        hasPendingSave = true;
+        return;
       }
 
-      // 2. Envia pontuação para o placar nativo do YouTube (Passo 9 do Guia)
-      await submitScoreToYouTube(bestScore);
+      isSavingProgress = true;
+      try {
+        if (typeof ytgame !== 'undefined' && ytgame.game?.saveData) {
+          await ytgame.game.saveData(JSON.stringify({ bestScore }));
+        } else {
+          try { localStorage.setItem('startap_best', String(bestScore)); } catch (_) {}
+        }
+        await submitScoreToYouTube(bestScore);
+      } catch (err) {
+        console.warn('Erro ao salvar dados no YouTube Playables:', err);
+      } finally {
+        isSavingProgress = false;
+        if (hasPendingSave) {
+          hasPendingSave = false;
+          saveHighScore(bestScore);
+        }
+      }
     }
 
     async function loadSavedData() {
       if (typeof ytgame !== 'undefined' && ytgame.game?.loadData) {
         try {
-          const cloudData = await ytgame.game.loadData();
+          // Timeout de 3s para garantir resposta rápida (< 5s)
+          const loadPromise = ytgame.game.loadData();
+          const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 3000));
+          const cloudData = await Promise.race([loadPromise, timeoutPromise]);
+
           if (cloudData) {
-            const parsed = typeof cloudData === 'string' ? JSON.parse(cloudData) : cloudData;
-            if (parsed && typeof parsed.bestScore === 'number') {
-              bestScore = parsed.bestScore;
+            let parsed = null;
+            if (typeof cloudData === 'string' && cloudData.trim().length > 0) {
+              try {
+                parsed = JSON.parse(cloudData);
+              } catch (_) {}
+            } else if (typeof cloudData === 'object') {
+              parsed = cloudData;
+            }
+
+            if (parsed && typeof parsed.bestScore === 'number' && Number.isFinite(parsed.bestScore)) {
+              bestScore = Math.max(0, Math.floor(parsed.bestScore));
             }
           }
         } catch (err) {
           console.warn('Erro ao carregar dados do YouTube Playables:', err);
         }
-      } else {
+      }
+
+      // Fallback local se não estiver na nuvem
+      if (bestScore === 0) {
         try {
           const local = localStorage.getItem('startap_best');
-          if (local) bestScore = parseInt(local, 10) || 0;
+          if (local) bestScore = Math.max(0, parseInt(local, 10) || 0);
         } catch (_) {}
       }
 
@@ -1046,7 +1089,9 @@
         saveHighScore(score);
         gameoverRecordMsg.textContent = '⭐ NEW PERSONAL BEST! ⭐';
         gameoverRecordMsg.className = 'record-status new-record';
-        setTimeout(() => audio.playRecord(), 300);
+        recordSoundTimer = setTimeout(() => {
+          if (!platformPaused && !userPaused) audio.playRecord();
+        }, 300);
       } else {
         gameoverRecordMsg.textContent = `BEST SCORE: ${bestScore}`;
         gameoverRecordMsg.className = 'record-status';
@@ -1147,6 +1192,7 @@
     });
 
     window.addEventListener('keydown', (e) => {
+      // YouTube Playables PROÍBE preventDefault() na tecla Escape
       if (e.code === 'Escape') {
         if (state === 'PAUSED') {
           retomarLogicaJogo('user');
@@ -1155,11 +1201,13 @@
         }
         return;
       }
+
       if (e.code === 'KeyP') {
         e.preventDefault();
         togglePause();
         return;
       }
+
       if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
         if (state === 'GAMEOVER') {
@@ -1172,19 +1220,17 @@
       }
     });
 
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        pausarLogicaJogo('system');
-      } else {
-        if (!isPlayablesEnv) {
+    /* O YouTube Playables proíbe o Page Visibility API no ambiente da plataforma.
+       Permitido estritamente como fallback em testes locais fora do YouTube */
+    if (!isPlayablesEnv) {
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          pausarLogicaJogo('system');
+        } else {
           retomarLogicaJogo('system');
         }
-      }
-    });
-
-    window.addEventListener('pagehide', () => {
-      pausarLogicaJogo('system');
-    });
+      });
+    }
 
     function drawCuteStar(x, y, radius, angle = 0) {
       ctx.save();
@@ -1574,7 +1620,7 @@
         drawCuteStar(gemRealX, gemRealY, gem.size, 0);
       }
 
-      /* PARTICULAS */
+      /* PARTÍCULAS */
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         ctx.fillStyle = p.color;
@@ -1630,15 +1676,15 @@
     }
 
     /* ==========================================================================
-       CICLO DE VIDA CONFORME AS DIRETRIZES DO YOUTUBE PLAYABLES
+       PASSO 4: CICLO DE VIDA E NOTIFICAÇÕES (FIRST FRAME & GAME READY)
        ========================================================================== */
     async function initPlayable() {
-      // 1. Configura a tela e desenha o primeiro frame
+      // 1. Ajusta o viewport e renderiza o primeiro frame visual
       resizeCanvas();
       updateScreensUI();
       render();
 
-      // 2. Notifica o YouTube que o primeiro frame foi renderizado (Passo 4)
+      // 2. Notifica o YouTube que o primeiro quadro foi renderizado
       if (typeof ytgame !== 'undefined' && ytgame.game?.firstFrameReady) {
         try {
           ytgame.game.firstFrameReady();
@@ -1670,7 +1716,7 @@
         if (typeof ytgame.system.onPause === 'function') {
           ytgame.system.onPause(() => {
             pausarLogicaJogo('system');
-            // Salva progresso ao pausar para não perder recordes caso o app seja fechado
+            // Salva progresso ao pausar para não perder recordes (Requisito do YouTube)
             if (score > bestScore) {
               saveHighScore(score);
             }
@@ -1689,10 +1735,10 @@
         animFrameId = requestAnimationFrame(mainLoop);
       }
 
-      // 4. Carrega os dados salvos antes de habilitar as ações (Passo 8)
+      // 4. Carrega os dados salvos antes de liberar a interatividade completa
       await loadSavedData();
 
-      // 5. Notifica que o jogo e o menu estão 100% interativos para o usuário
+      // 5. Notifica que o menu está 100% interativo para o jogador
       if (typeof ytgame !== 'undefined' && ytgame.game?.gameReady) {
         try {
           ytgame.game.gameReady();
@@ -1702,7 +1748,11 @@
       }
     }
 
-    window.addEventListener('DOMContentLoaded', initPlayable);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initPlayable);
+    } else {
+      initPlayable();
+    }
   </script>
 </body>
 </html>
