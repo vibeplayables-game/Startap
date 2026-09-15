@@ -6,7 +6,7 @@
   <title>STAR TAP - Arcade</title>
 
   <!-- YOUTUBE PLAYABLES SDK (OBRIGATÓRIO LOCAL NO PACOTE .ZIP) -->
-  <script src="https://www.youtube.com/game_api/v1"></script>
+  <script src="youtube_playable_sdk.js"></script>
 
   <style>
     * {
@@ -54,13 +54,13 @@
       top: 0;
       left: 0;
       width: 100%;
-      height: calc(64px + env(safe-area-inset-top, 0px));
-      padding: max(10px, env(safe-area-inset-top, 10px)) 20px 8px 20px;
+      height: calc(56px + env(safe-area-inset-top, 0px));
+      padding: max(8px, env(safe-area-inset-top, 8px)) 16px 6px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       z-index: 40;
-      background: linear-gradient(180deg, rgba(4, 7, 20, 0.95) 0%, rgba(4, 7, 20, 0.6) 75%, transparent 100%);
+      background: linear-gradient(180deg, rgba(4, 7, 20, 0.95) 0%, rgba(4, 7, 20, 0.5) 75%, transparent 100%);
       pointer-events: none;
     }
 
@@ -105,7 +105,7 @@
     }
 
     #live-score {
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 900;
       letter-spacing: 1px;
       color: #00e5ff;
@@ -127,14 +127,15 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: rgba(4, 7, 20, 0.9);
+      background: rgba(4, 7, 20, 0.92);
       backdrop-filter: blur(4px);
       -webkit-backdrop-filter: blur(4px);
       z-index: 30;
-      padding: 24px;
+      padding: 16px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.22s ease;
+      transition: opacity 0.2s ease;
+      overflow-y: auto;
     }
 
     .ui-overlay.active {
@@ -147,15 +148,18 @@
       pointer-events: none !important;
     }
 
+    /* ==========================================================================
+       LAYOUT RETRATO (PORTRAIT PADRÃO)
+       ========================================================================== */
     #start-screen {
-      padding: calc(64px + env(safe-area-inset-top, 0px)) 20px calc(32px + env(safe-area-inset-bottom, 0px)) 20px;
+      padding: calc(60px + env(safe-area-inset-top, 0px)) 20px calc(24px + env(safe-area-inset-bottom, 0px)) 20px;
       background: radial-gradient(circle at 50% 40%, rgba(0, 229, 255, 0.12) 0%, rgba(4, 7, 20, 0.96) 70%, #040714 100%);
       justify-content: space-between;
     }
 
     .logo-container {
       margin-top: auto;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
       text-align: center;
       display: flex;
       flex-direction: column;
@@ -166,18 +170,18 @@
 
     @keyframes logoFloat {
       0% { transform: translateY(0); }
-      100% { transform: translateY(-10px); }
+      100% { transform: translateY(-8px); }
     }
 
     .logo-star-top {
-      font-size: 52px;
+      font-size: 48px;
       color: #ffd700;
       filter: drop-shadow(0 0 16px rgba(255, 215, 0, 0.8));
       margin-bottom: -6px;
     }
 
     .logo-main {
-      font-size: 58px;
+      font-size: 54px;
       font-weight: 900;
       letter-spacing: 3px;
       line-height: 1;
@@ -186,7 +190,7 @@
     }
 
     .logo-sub {
-      font-size: 48px;
+      font-size: 44px;
       font-weight: 900;
       letter-spacing: 8px;
       color: #00e5ff;
@@ -200,6 +204,7 @@
       align-items: center;
       width: 100%;
       max-width: 320px;
+      margin-bottom: auto;
     }
 
     .best-badge {
@@ -208,13 +213,13 @@
       gap: 8px;
       background: #090e20;
       border: 2px solid #ffd700;
-      padding: 8px 20px;
+      padding: 6px 18px;
       border-radius: 999px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 900;
       letter-spacing: 1px;
       color: #ffd700;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       box-shadow: 0 0 16px rgba(255, 215, 0, 0.25);
     }
 
@@ -224,14 +229,14 @@
       justify-content: center;
       gap: 10px;
       width: 100%;
-      height: 54px;
+      height: 52px;
       min-height: 48px;
       background: #00e5ff;
       color: #040714;
       border: 2px solid #00e5ff;
       border-radius: 14px;
       font-family: inherit;
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 900;
       letter-spacing: 1px;
       cursor: pointer;
@@ -249,14 +254,15 @@
     }
 
     .hints-card {
-      margin-top: 16px;
+      margin-top: 14px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
-      font-size: 13px;
+      gap: 6px;
+      font-size: 12px;
       color: #7b8ea8;
       font-weight: 700;
+      text-align: center;
     }
 
     .input-tags {
@@ -267,7 +273,7 @@
     .tag {
       background: #0c1226;
       border: 1px solid #00e5ff;
-      padding: 4px 10px;
+      padding: 3px 8px;
       border-radius: 6px;
       font-size: 11px;
       font-weight: 800;
@@ -278,7 +284,7 @@
       background: #080d20;
       border: 2px solid #00e5ff;
       border-radius: 20px;
-      padding: 28px 24px;
+      padding: 24px 20px;
       width: 100%;
       max-width: 320px;
       text-align: center;
@@ -286,11 +292,11 @@
     }
 
     .gameover-title {
-      font-size: 32px;
+      font-size: 28px;
       font-weight: 900;
       color: #ff2a78;
       letter-spacing: 2px;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
 
     .score-circle {
@@ -298,11 +304,11 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
 
     .score-num {
-      font-size: 64px;
+      font-size: 56px;
       font-weight: 900;
       color: #fff;
       line-height: 1;
@@ -313,13 +319,13 @@
       font-weight: 800;
       letter-spacing: 2px;
       color: #7085a6;
-      margin-top: 8px;
+      margin-top: 6px;
     }
 
     .record-status {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 800;
-      margin-bottom: 22px;
+      margin-bottom: 18px;
       color: #abbbcf;
     }
 
@@ -348,12 +354,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       z-index: 26;
       pointer-events: none;
       opacity: 0;
-      transition: opacity 0.22s ease;
-      font-size: 16px;
+      transition: opacity 0.2s ease;
+      font-size: 15px;
       font-weight: 900;
       letter-spacing: 1.5px;
       color: #00e5ff;
@@ -366,13 +372,108 @@
     }
 
     .ready-tap-icon {
-      font-size: 32px;
+      font-size: 28px;
       filter: drop-shadow(0 0 10px #00e5ff);
     }
 
     @keyframes pulseFloat {
       0%, 100% { transform: translate(-50%, -50%) translateY(0); }
-      50% { transform: translate(-50%, -50%) translateY(-8px); }
+      50% { transform: translate(-50%, -50%) translateY(-6px); }
+    }
+
+    /* ==========================================================================
+       MODO PAISAGEM (LANDSCAPE) & TELAS CURTAS (< 520px)
+       Resolve o corte dos botões no YouTube Playables Test Suite
+       ========================================================================== */
+    @media (orientation: landscape), (max-height: 520px) {
+      #start-screen {
+        flex-direction: row !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 36px !important;
+        padding: max(12px, env(safe-area-inset-top, 12px)) max(24px, env(safe-area-inset-right, 24px)) max(12px, env(safe-area-inset-bottom, 12px)) max(24px, env(safe-area-inset-left, 24px)) !important;
+      }
+
+      .logo-container {
+        margin: 0 !important;
+        flex-shrink: 0;
+      }
+
+      .logo-star-top {
+        font-size: 36px !important;
+        margin-bottom: -4px !important;
+      }
+
+      .logo-main {
+        font-size: 40px !important;
+      }
+
+      .logo-sub {
+        font-size: 32px !important;
+        letter-spacing: 6px !important;
+        margin-top: -4px !important;
+      }
+
+      .menu-bottom-content {
+        margin: 0 !important;
+        max-width: 280px !important;
+      }
+
+      .best-badge {
+        margin-bottom: 10px !important;
+        padding: 4px 14px !important;
+        font-size: 12px !important;
+      }
+
+      .action-btn {
+        height: 48px !important;
+        min-height: 48px !important;
+        font-size: 15px !important;
+      }
+
+      .hints-card {
+        margin-top: 8px !important;
+        font-size: 11px !important;
+        gap: 4px !important;
+      }
+
+      .hints-card span:last-child {
+        display: none; /* Oculta texto secundário em telas de baixa altura */
+      }
+
+      /* Compactação de Pause e Game Over no modo paisagem */
+      .gameover-card {
+        padding: 14px 18px !important;
+        max-width: 360px !important;
+        border-radius: 16px !important;
+      }
+
+      .gameover-title {
+        font-size: 20px !important;
+        margin-bottom: 8px !important;
+      }
+
+      .score-circle {
+        margin-bottom: 8px !important;
+      }
+
+      .score-num {
+        font-size: 38px !important;
+      }
+
+      .score-lbl {
+        font-size: 10px !important;
+        margin-top: 2px !important;
+      }
+
+      .record-status {
+        font-size: 12px !important;
+        margin-bottom: 10px !important;
+      }
+
+      .btn-secondary {
+        margin-top: 6px !important;
+      }
     }
   </style>
 </head>
@@ -408,13 +509,13 @@
 
         <button id="start-btn" class="action-btn">
           <span>PLAY NOW</span>
-          <span style="font-size: 16px;">▶</span>
+          <span style="font-size: 15px;">▶</span>
         </button>
 
         <div class="hints-card">
           <div class="input-tags">
             <span class="tag">📱 TAP ANYWHERE</span>
-            <span class="tag">⌨️ SPACEBAR</span>
+            <span class="tag">⌨️ SPACE</span>
           </div>
           <span>Bounce on walls & avoid spikes</span>
         </div>
@@ -443,7 +544,7 @@
         <div id="gameover-record-msg" class="record-status">BEST SCORE: 0</div>
         <button id="restart-btn" class="action-btn" style="background: #ff2a78; border-color: #ff2a78; color: #fff;">
           <span>TRY AGAIN</span>
-          <span style="font-size: 18px; line-height: 1;">↻</span>
+          <span style="font-size: 17px; line-height: 1;">↻</span>
         </button>
       </div>
     </div>
@@ -453,11 +554,11 @@
     /* ==========================================================================
        ESTADOS DO JOGO E FLAGS DE PAUSA RIGOROSAS
        ========================================================================== */
-    let platformPaused = false; // YouTube SDK ou Mudança de Visibilidade da Aba
-    let userPaused = false;     // Botão manual de pausa ou tecla de pausa
+    let platformPaused = false;
+    let userPaused = false;
     let isDataLoaded = false;
     let gameOverTimestamp = 0;
-    let state = 'START';        // 'START' | 'READY' | 'PLAY' | 'PAUSED' | 'GAMEOVER'
+    let state = 'START';
     let previousStateBeforePause = 'READY';
     let score = 0;
     let bestScore = 0;
@@ -467,7 +568,7 @@
     let physicsAccumulator = 0;
 
     /* ==========================================================================
-       SISTEMA DE ÁUDIO RESTRITO AO YOUTUBE PLAYABLES (Web Audio API)
+       SISTEMA DE ÁUDIO WEB AUDIO API (ISOLADO E CONTROLADO)
        ========================================================================== */
     class PlayablesAudioEngine {
       constructor() {
@@ -588,7 +689,7 @@
     window.addEventListener('keydown', wakeAudio, { once: true });
 
     /* ==========================================================================
-       SISTEMA RESPONSIVO DINÂMICO (SEM VALORES ESTÁTICOS)
+       SISTEMA RESPONSIVO DO CANVAS
        ========================================================================== */
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d', { alpha: false });
@@ -611,7 +712,6 @@
 
     let renderScale = 1;
 
-    // Coordenadas Virtuais Fluidas
     let V_WIDTH = 400;
     const V_HEIGHT = 800;
     let arenaWidth = 400;
@@ -645,7 +745,6 @@
       renderScale = canvas.height / V_HEIGHT;
       V_WIDTH = Math.round(canvas.width / renderScale);
 
-      // Arena dinâmica centrada com proporção fluida
       arenaWidth = Math.min(V_WIDTH, 480);
       arenaLeft = Math.round((V_WIDTH - arenaWidth) / 2);
       arenaRight = arenaLeft + arenaWidth;
@@ -655,7 +754,6 @@
         player.y = (TOP_SPIKE_Y + BOT_SPIKE_Y) / 2;
       }
 
-      // Se o jogo estiver pausado, desenha um frame único para manter layout nítido
       if (userPaused || platformPaused || state === 'PAUSED') {
         render();
       }
@@ -704,11 +802,9 @@
       trail: []
     };
 
-    // Os espinhos agora guardam apenas os índices das fatias (0 a SLOT_COUNT - 1)
-    // eliminando qualquer cálculo estático em pixels que quebre em telas compridas!
     let leftSpikeSlots = [];
     let rightSpikeSlots = [];
-    let gem = null; // { relX: 0..1, relY: 0..1, size: 15, floatTime: 0 }
+    let gem = null;
     let particles = [];
     let tapRipples = [];
 
@@ -735,7 +831,7 @@
     }
 
     /* ==========================================================================
-       CONGELAMENTO E RETOMADA RIGOROSOS DO MOTOR (YOUTUBE CERTIFIED)
+       CONGELAMENTO E RETOMADA RIGOROSOS DO MOTOR
        ========================================================================== */
     function pausarLogicaJogo(origem = 'user') {
       if (origem === 'system') {
@@ -744,27 +840,22 @@
         userPaused = true;
       }
 
-      // 1. Congela o loop de animação imediatamente para economizar recursos e impedir queda fantasma
       if (animFrameId) {
         cancelAnimationFrame(animFrameId);
         animFrameId = null;
       }
 
-      // 2. Suspende a saída de áudio
       audio.suspend();
 
-      // 3. Salva o estado anterior para retomada correta
       if (state === 'PLAY' || state === 'READY') {
         previousStateBeforePause = state;
         state = 'PAUSED';
       }
 
-      // 4. Limpa acumulador de física para não "explodir" em movimento quando retomar
       physicsAccumulator = 0;
       lastFrameTime = performance.now();
 
       updateScreensUI();
-      // Renderiza um último quadro estático com a tela congelada
       render();
     }
 
@@ -777,16 +868,13 @@
         userPaused = false;
       }
 
-      // Se ambos os bloqueios (sistema e usuário) foram liberados, retoma a execução
       if (!platformPaused && !userPaused) {
         state = (previousStateBeforePause === 'READY' || previousStateBeforePause === 'PLAY')
           ? previousStateBeforePause
           : 'PLAY';
 
-        // Reavalia o áudio
         audio.resume();
 
-        // Reseta carimbos de tempo para evitar pulo de delta time
         lastFrameTime = performance.now();
         physicsAccumulator = 0;
 
@@ -807,7 +895,7 @@
       }
     }
 
-    /* GERAÇÃO RELATIVA DE ESPINHOS */
+    /* GERAÇÃO DINÂMICA DE ESPINHOS */
     function generateSpikeSlots() {
       const slots = [];
       let count = 2;
@@ -827,8 +915,8 @@
     function spawnGem() {
       if (Math.random() < 0.7) {
         gem = {
-          relX: 0.2 + Math.random() * 0.6, // 20% a 80% da arena útil
-          relY: 0.15 + Math.random() * 0.7, // 15% a 85% da altura útil
+          relX: 0.2 + Math.random() * 0.6,
+          relY: 0.15 + Math.random() * 0.7,
           size: 15,
           floatTime: 0
         };
@@ -977,7 +1065,7 @@
         startScreen.classList.remove('active', 'fading-out');
         pauseScreen.classList.remove('active', 'fading-out');
         gameoverScreen.classList.remove('active', 'fading-out');
-      }, 220);
+      }, 200);
     }
 
     function handleAction() {
@@ -1040,7 +1128,6 @@
 
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Escape') {
-        // NUNCA chamar preventDefault() no Escape (Diretriz YouTube Playables)
         if (state === 'PAUSED') {
           retomarLogicaJogo('user');
         } else if (state === 'PLAY' || state === 'READY') {
@@ -1065,12 +1152,10 @@
       }
     });
 
-    // LISTENERS DE SEGUNDO PLANO (MINIMIZAÇÃO DO APP E PERDA DE FOCO)
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         pausarLogicaJogo('system');
       } else {
-        // Se a plataforma não for YouTube Playables (ex: teste em navegador puro), restaura
         if (typeof ytgame === 'undefined') {
           retomarLogicaJogo('system');
         }
@@ -1081,7 +1166,6 @@
       pausarLogicaJogo('system');
     });
 
-    /* RENDERIZADOR DO PERSONAGEM */
     function drawCuteStar(x, y, radius, angle = 0) {
       ctx.save();
       ctx.translate(x, y);
@@ -1161,11 +1245,8 @@
       ctx.restore();
     }
 
-    /* ==========================================================================
-       LOOP FÍSICO COM PARADA TOTAL E VERIFICAÇÃO DE COLISÕES
-       ========================================================================== */
+    /* LOOP FÍSICO COM PARADA ABSOLUTA */
     function tickFixedPhysics() {
-      // Congelamento absoluto do motor
       if (platformPaused || userPaused || state === 'PAUSED') return;
 
       if (screenShake > 0) screenShake *= 0.88;
@@ -1227,7 +1308,7 @@
         });
       }
 
-      // Colisão com teto e chão
+      // Teto e Chão
       if (player.y - player.radius <= TOP_SPIKE_Y || player.y + player.radius >= BOT_SPIKE_Y) {
         triggerGameOver();
         return;
@@ -1236,7 +1317,7 @@
       const leftWallX = arenaLeft + WALL_THICK;
       const rightWallX = arenaRight - WALL_THICK;
 
-      // Rebater na parede direita
+      // Parede direita
       if (player.x + player.radius >= rightWallX) {
         player.x = rightWallX - player.radius;
         player.vx = -Math.abs(player.vx);
@@ -1250,7 +1331,7 @@
         spawnGem();
       }
 
-      // Rebater na parede esquerda
+      // Parede esquerda
       if (player.x - player.radius <= leftWallX) {
         player.x = leftWallX + player.radius;
         player.vx = Math.abs(player.vx);
@@ -1264,7 +1345,7 @@
         spawnGem();
       }
 
-      // Checar espinhos na parede ativa
+      // Espinhos
       if (player.vx > 0) {
         for (let i = 0; i < rightSpikeSlots.length; i++) {
           if (checkSpikeSlotCollision('right', rightSpikeSlots[i])) {
@@ -1281,7 +1362,7 @@
         }
       }
 
-      // Coleta da Joia / Estrela
+      // Joia
       if (gem) {
         gem.floatTime += 0.05;
         const gemRealX = leftWallX + gem.relX * (rightWallX - leftWallX);
@@ -1321,7 +1402,7 @@
       ctx.fillStyle = '#040714';
       ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
 
-      // Estrelas de fundo
+      // Estrelas
       const now = performance.now() * 0.003;
       for (let i = 0; i < bgStars.length; i++) {
         const s = bgStars[i];
@@ -1347,7 +1428,7 @@
       }
       ctx.globalAlpha = 1.0;
 
-      // Placar gigante de fundo
+      // Placar
       if (state === 'PLAY' || state === 'PAUSED') {
         ctx.fillStyle = 'rgba(0, 229, 255, 0.06)';
         ctx.font = '900 150px system-ui, -apple-system, sans-serif';
@@ -1368,7 +1449,6 @@
       }
       ctx.globalAlpha = 1.0;
 
-      // Paredes e trilhos neon
       const leftWallX = arenaLeft + WALL_THICK;
       const rightWallX = arenaRight - WALL_THICK;
 
@@ -1408,7 +1488,7 @@
       drawNeonRail(leftWallX, wallFlashLeft);
       drawNeonRail(rightWallX, wallFlashRight);
 
-      // Espinhos do Teto e Chão calculados para preencher perfeitamente a largura
+      // Teto e Chão dinâmicos
       const spikeW = 20;
       const arenaSpikeCount = Math.ceil((arenaRight - arenaLeft) / spikeW);
 
@@ -1451,7 +1531,7 @@
       ctx.fill();
       ctx.stroke();
 
-      /* ESPINHOS LATERAIS RENDERIZADOS DINAMICAMENTE */
+      /* ESPINHOS LATERAIS */
       const renderSpikes = (side, slots) => {
         if (slots.length === 0) return;
         ctx.fillStyle = '#8a0f43';
@@ -1480,14 +1560,14 @@
       renderSpikes('left', leftSpikeSlots);
       renderSpikes('right', rightSpikeSlots);
 
-      /* ESTRELA COLETÁVEL DINÂMICA */
+      /* ESTRELA COLETÁVEL */
       if (gem) {
         const gemRealX = leftWallX + gem.relX * (rightWallX - leftWallX);
         const gemRealY = TOP_SPIKE_Y + 40 + gem.relY * (BOT_SPIKE_Y - TOP_SPIKE_Y - 80) + Math.sin(gem.floatTime) * 3.5;
         drawCuteStar(gemRealX, gemRealY, gem.size, 0);
       }
 
-      /* PARTÍCULAS */
+      /* PARTICULAS */
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         ctx.fillStyle = p.color;
@@ -1521,9 +1601,7 @@
       ctx.restore();
     }
 
-    /* ==========================================================================
-       LOOP PRINCIPAL COM CONTROLE DE DELTA TIME
-       ========================================================================== */
+    /* LOOP PRINCIPAL */
     function mainLoop(currentFrameTime) {
       if (platformPaused || userPaused || state === 'PAUSED') {
         animFrameId = null;
@@ -1545,17 +1623,13 @@
       animFrameId = requestAnimationFrame(mainLoop);
     }
 
-    /* ==========================================================================
-       CICLO DE VIDA DO YOUTUBE PLAYABLES SDK
-       ========================================================================== */
+    /* CICLO DE VIDA DO YOUTUBE PLAYABLES SDK */
     async function initPlayable() {
       resizeCanvas();
       updateScreensUI();
 
-      // 1. Desenha o primeiro quadro estático imediatamente
       render();
 
-      // 2. Notifica ao YouTube que o primeiro frame foi renderizado
       if (typeof ytgame !== 'undefined' && ytgame.game?.firstFrameReady) {
         try {
           ytgame.game.firstFrameReady();
@@ -1564,7 +1638,6 @@
         }
       }
 
-      // 3. Registra os callbacks oficiais de ciclo de vida do YouTube
       if (typeof ytgame !== 'undefined' && ytgame.system) {
         if (typeof ytgame.system.isAudioEnabled === 'function') {
           try {
@@ -1584,14 +1657,12 @@
           }
         }
 
-        // Evento de Pausa do App do YouTube
         if (typeof ytgame.system.onPause === 'function') {
           ytgame.system.onPause(() => {
             pausarLogicaJogo('system');
           });
         }
 
-        // Evento de Retomada do App do YouTube
         if (typeof ytgame.system.onResume === 'function') {
           ytgame.system.onResume(() => {
             retomarLogicaJogo('system');
@@ -1599,20 +1670,18 @@
         }
       }
 
-      // 4. Inicia o loop gráfico contínuo
       lastFrameTime = performance.now();
       if (!animFrameId) {
         animFrameId = requestAnimationFrame(mainLoop);
       }
 
-      // 5. Carrega pontuações da nuvem do Google
       await loadSavedData();
 
-      // 6. Notifica que o jogo está 100% pronto para interação
       if (typeof ytgame !== 'undefined' && ytgame.game?.gameReady) {
         try {
           ytgame.game.gameReady();
-        } catch (e) {
+        } catch (e)
+          {
           console.warn('gameReady:', e);
         }
       }
