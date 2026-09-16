@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>STAR TAP - Arcade</title>
 
-  <!-- PASSO 3: OBRIGATÓRIO SER A PRIMEIRA TAG DE SCRIPT ANTES DO JOGO -->
   <script src="https://www.youtube.com/game_api/v1"></script>
 
   <style>
@@ -736,6 +735,8 @@
     const FIXED_STEP = 1 / 60;
     const MAX_ACCUMULATOR = 0.1;
 
+    let hoverBaseY = (TOP_SPIKE_Y + BOT_SPIKE_Y) / 2;
+
     function resizeCanvas() {
       const w = window.innerWidth || document.documentElement.clientWidth || 360;
       const h = window.innerHeight || document.documentElement.clientHeight || 640;
@@ -751,9 +752,10 @@
       arenaLeft = Math.round((V_WIDTH - arenaWidth) / 2);
       arenaRight = arenaLeft + arenaWidth;
 
-      if (state === 'READY' || state === 'START') {
+      if (state === 'START' || (state === 'READY' && score === 0)) {
         player.x = (arenaLeft + arenaRight) / 2;
         player.y = (TOP_SPIKE_Y + BOT_SPIKE_Y) / 2;
+        hoverBaseY = player.y;
       }
 
       if (userPaused || platformPaused || state === 'PAUSED') {
@@ -815,6 +817,14 @@
       pauseScreen.classList.toggle('active', state === 'PAUSED');
       gameoverScreen.classList.toggle('active', state === 'GAMEOVER');
       readyPrompt.classList.toggle('active', state === 'READY');
+
+      if (state === 'READY') {
+        if (player.y > 520) {
+          readyPrompt.style.top = '35%';
+        } else {
+          readyPrompt.style.top = '60%';
+        }
+      }
 
       liveScoreEl.classList.toggle('show', state === 'PLAY' || state === 'READY' || state === 'PAUSED');
       liveScoreEl.textContent = `Score: ${score}`;
@@ -880,13 +890,22 @@
 
       // Só retoma se tanto o usuário quanto a plataforma permitirem
       if (!platformPaused && !userPaused) {
-        if (savedStateBeforePause) {
+        // CORREÇÃO: Volta sempre no estado READY (parado flutuando no ar) com o aviso TAP TO FLY
+        // mantendo posição, espinhos e score intactos!
+        if (savedStateBeforePause === 'PLAY' || state === 'PAUSED') {
+          state = 'READY';
+          const minY = TOP_SPIKE_Y + player.radius + 16;
+          const maxY = BOT_SPIKE_Y - player.radius - 16;
+          hoverBaseY = Math.max(minY, Math.min(maxY, player.y));
+          player.y = hoverBaseY;
+          player.vy = 0;
+          hoverTime = 0;
+          player.trail = [];
+        } else if (savedStateBeforePause) {
           state = savedStateBeforePause;
-          savedStateBeforePause = null;
-        } else if (state === 'PAUSED') {
-          state = 'PLAY';
         }
 
+        savedStateBeforePause = null;
         audio.resume();
 
         lastFrameTime = performance.now();
@@ -1010,7 +1029,6 @@
       menuBestVal.textContent = bestScore;
       gameoverRecordMsg.textContent = `BEST SCORE: ${bestScore}`;
 
-      // Evita chamadas concorrentes a saveData()
       if (isSavingProgress) {
         hasPendingSave = true;
         return;
@@ -1038,7 +1056,6 @@
     async function loadSavedData() {
       if (typeof ytgame !== 'undefined' && ytgame.game?.loadData) {
         try {
-          // Timeout de 3s para garantir resposta rápida (< 5s)
           const loadPromise = ytgame.game.loadData();
           const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 3000));
           const cloudData = await Promise.race([loadPromise, timeoutPromise]);
@@ -1062,7 +1079,6 @@
         }
       }
 
-      // Fallback local se não estiver na nuvem
       if (bestScore === 0) {
         try {
           const local = localStorage.getItem('startap_best');
@@ -1101,12 +1117,17 @@
     }
 
     function prepareReadyState() {
-      if (state === 'READY' || platformPaused || userPaused) return;
+      if (platformPaused) return;
+
+      userPaused = false;
+      savedStateBeforePause = null;
 
       wakeAudio();
+      audio.resume();
 
       player.x = (arenaLeft + arenaRight) / 2;
-      player.y = (TOP_SPIKE_Y + BOT_SPIKE_Y) / 2;
+      hoverBaseY = (TOP_SPIKE_Y + BOT_SPIKE_Y) / 2;
+      player.y = hoverBaseY;
       player.vx = BASE_SPEED_X;
       player.vy = 0;
       player.trail = [];
@@ -1132,6 +1153,13 @@
         pauseScreen.classList.remove('active', 'fading-out');
         gameoverScreen.classList.remove('active', 'fading-out');
       }, 200);
+
+      lastFrameTime = performance.now();
+      physicsAccumulator = 0;
+      if (!animFrameId) {
+        animFrameId = requestAnimationFrame(mainLoop);
+      }
+      render();
     }
 
     function handleAction() {
@@ -1192,7 +1220,6 @@
     });
 
     window.addEventListener('keydown', (e) => {
-      // YouTube Playables PROÍBE preventDefault() na tecla Escape
       if (e.code === 'Escape') {
         if (state === 'PAUSED') {
           retomarLogicaJogo('user');
@@ -1220,8 +1247,6 @@
       }
     });
 
-    /* O YouTube Playables proíbe o Page Visibility API no ambiente da plataforma.
-       Permitido estritamente como fallback em testes locais fora do YouTube */
     if (!isPlayablesEnv) {
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
@@ -1347,7 +1372,7 @@
 
       if (state === 'READY') {
         hoverTime += 0.05;
-        player.y = (TOP_SPIKE_Y + BOT_SPIKE_Y) / 2 + Math.sin(hoverTime) * 4.5;
+        player.y = hoverBaseY + Math.sin(hoverTime) * 4.5;
         return;
       }
 
@@ -1484,7 +1509,7 @@
       }
       ctx.globalAlpha = 1.0;
 
-      if (state === 'PLAY' || state === 'PAUSED') {
+      if (state === 'PLAY' || state === 'PAUSED' || (state === 'READY' && score > 0)) {
         ctx.fillStyle = 'rgba(0, 229, 255, 0.06)';
         ctx.font = '900 150px system-ui, -apple-system, sans-serif';
         ctx.textAlign = 'center';
@@ -1679,12 +1704,10 @@
        PASSO 4: CICLO DE VIDA E NOTIFICAÇÕES (FIRST FRAME & GAME READY)
        ========================================================================== */
     async function initPlayable() {
-      // 1. Ajusta o viewport e renderiza o primeiro frame visual
       resizeCanvas();
       updateScreensUI();
       render();
 
-      // 2. Notifica o YouTube que o primeiro quadro foi renderizado
       if (typeof ytgame !== 'undefined' && ytgame.game?.firstFrameReady) {
         try {
           ytgame.game.firstFrameReady();
@@ -1693,7 +1716,6 @@
         }
       }
 
-      // 3. Registra os ouvintes do sistema da plataforma (Passos 6 e 7)
       if (typeof ytgame !== 'undefined' && ytgame.system) {
         if (typeof ytgame.system.isAudioEnabled === 'function') {
           try {
@@ -1716,7 +1738,6 @@
         if (typeof ytgame.system.onPause === 'function') {
           ytgame.system.onPause(() => {
             pausarLogicaJogo('system');
-            // Salva progresso ao pausar para não perder recordes (Requisito do YouTube)
             if (score > bestScore) {
               saveHighScore(score);
             }
@@ -1735,10 +1756,8 @@
         animFrameId = requestAnimationFrame(mainLoop);
       }
 
-      // 4. Carrega os dados salvos antes de liberar a interatividade completa
       await loadSavedData();
 
-      // 5. Notifica que o menu está 100% interativo para o jogador
       if (typeof ytgame !== 'undefined' && ytgame.game?.gameReady) {
         try {
           ytgame.game.gameReady();
